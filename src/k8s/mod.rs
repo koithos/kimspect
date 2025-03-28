@@ -26,6 +26,15 @@ impl K8sClient {
         Ok(Self { client })
     }
 
+    pub async fn is_initialized(&self) -> Result<bool> {
+        // Try to list pods in the default namespace to verify client is working
+        let pods: Api<Pod> = Api::namespaced(self.client.clone(), "default");
+        pods.list(&Default::default())
+            .await
+            .map(|_| true)
+            .or_else(|_| Ok(false))
+    }
+
     pub async fn get_pod_images(
         &self,
         namespace: &str,
@@ -58,7 +67,7 @@ impl K8sClient {
     }
 }
 
-fn extract_registry(image: &str) -> String {
+pub fn extract_registry(image: &str) -> String {
     if let Some(registry) = image.split('/').next() {
         if registry.contains('.') || registry.contains(':') {
             registry.to_string()
@@ -70,7 +79,7 @@ fn extract_registry(image: &str) -> String {
     }
 }
 
-fn process_pod(pod: &Pod) -> Vec<PodImage> {
+pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
     let namespace = pod.metadata.namespace.clone().unwrap_or_default();
@@ -95,7 +104,7 @@ fn process_pod(pod: &Pod) -> Vec<PodImage> {
     pod_images
 }
 
-fn split_image(image: &str) -> (String, String) {
+pub fn split_image(image: &str) -> (String, String) {
     let parts: Vec<&str> = image.split(':').collect();
     let name = parts[0].to_string();
     let version = if parts.len() > 1 {

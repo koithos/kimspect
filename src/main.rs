@@ -1,9 +1,8 @@
-mod cli;
-mod k8s;
-
 use anyhow::Result;
-use cli::{Args, Commands, GetResource};
-use k8s::{display_pod_images, K8sClient};
+use kelper::{
+    cli::{Args, Commands, GetResource},
+    k8s::{display_pod_images, K8sClient},
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
