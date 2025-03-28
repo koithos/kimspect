@@ -11,4 +11,5 @@ k8s-openapi = { version = "0.20", features = ["v1_28"] }
 kube = { version = "0.87", features = ["runtime"] }
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
-colored = "2.0" 
+colored = "2.0"
+prettytable-rs = "0.10" 
