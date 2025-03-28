@@ -12,9 +12,9 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::Get { resource } => match resource {
-            GetResource::Images { namespace } => {
+            GetResource::Images { namespace, node } => {
                 let client = K8sClient::new().await?;
-                let pod_images = client.get_pod_images(&namespace).await?;
+                let pod_images = client.get_pod_images(&namespace, node.as_deref()).await?;
                 display_pod_images(&pod_images);
             }
         },

@@ -20,8 +20,11 @@ pub enum Commands {
 pub enum GetResource {
     /// List pod images and their registries
     Images {
-        /// Kubernetes namespace to query (defaults to "default")
+        /// Kubernetes namespace to query (defaults to "default", ignored when --node is specified)
         #[arg(short, long, default_value = "default")]
         namespace: String,
+        /// Node name to filter pods (optional)
+        #[arg(short, long)]
+        node: Option<String>,
     },
 } 
