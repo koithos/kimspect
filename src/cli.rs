@@ -27,4 +27,4 @@ pub enum GetResource {
         #[arg(short, long)]
         node: Option<String>,
     },
-} 
+}

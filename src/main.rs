@@ -3,7 +3,7 @@ mod k8s;
 
 use anyhow::Result;
 use cli::{Args, Commands, GetResource};
-use k8s::{K8sClient, display_pod_images};
+use k8s::{display_pod_images, K8sClient};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,4 +21,4 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-} 
+}

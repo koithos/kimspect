@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use colored::*;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{Api, Client};
-use prettytable::{Table, row};
+use prettytable::{row, Table};
 
 #[derive(Debug)]
 pub struct PodImage {
@@ -26,14 +26,19 @@ impl K8sClient {
         Ok(Self { client })
     }
 
-    pub async fn get_pod_images(&self, namespace: &str, node_name: Option<&str>) -> Result<Vec<PodImage>> {
+    pub async fn get_pod_images(
+        &self,
+        namespace: &str,
+        node_name: Option<&str>,
+    ) -> Result<Vec<PodImage>> {
         let pods: Api<Pod> = if node_name.is_some() {
             Api::all(self.client.clone())
         } else {
             Api::namespaced(self.client.clone(), namespace)
         };
 
-        let pods_list = pods.list(&Default::default())
+        let pods_list = pods
+            .list(&Default::default())
             .await
             .context("Failed to list pods")?;
 
@@ -69,24 +74,24 @@ fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
     let namespace = pod.metadata.namespace.clone().unwrap_or_default();
-    
+
     if let Some(spec) = &pod.spec {
         let containers = &spec.containers;
-            for container in containers {
-                if let Some(image) = &container.image {
-                    let (image_name, image_version) = split_image(image);
-                    pod_images.push(PodImage {
-                        pod_name: pod_name.clone(),
-                        namespace: namespace.clone(),
-                        container_name: container.name.clone(),
-                        image_name,
-                        image_version,
-                        registry: extract_registry(image),
-                    });
-                }
+        for container in containers {
+            if let Some(image) = &container.image {
+                let (image_name, image_version) = split_image(image);
+                pod_images.push(PodImage {
+                    pod_name: pod_name.clone(),
+                    namespace: namespace.clone(),
+                    container_name: container.name.clone(),
+                    image_name,
+                    image_version,
+                    registry: extract_registry(image),
+                });
             }
         }
-    
+    }
+
     pod_images
 }
 
@@ -106,8 +111,15 @@ pub fn display_pod_images(images: &[PodImage]) {
     println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
-    table.add_row(row!["Pod Name", "Namespace", "Container", "Image Name", "Version", "Registry"]);
-    
+    table.add_row(row![
+        "Pod Name",
+        "Namespace",
+        "Container",
+        "Image Name",
+        "Version",
+        "Registry"
+    ]);
+
     for image in images {
         table.add_row(row![
             image.pod_name,
@@ -121,4 +133,4 @@ pub fn display_pod_images(images: &[PodImage]) {
 
     table.printstd();
     println!("\n{}", "=".repeat(80));
-} 
+}
