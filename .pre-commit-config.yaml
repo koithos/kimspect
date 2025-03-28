@@ -1,0 +1,45 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/rust-lang/rustfmt
+    rev: v0.1.16
+    hooks:
+      - id: rustfmt
+        args: [--edition, "2021"]
+
+  - repo: https://github.com/rust-lang/rust-clippy
+    rev: v0.1.71
+    hooks:
+      - id: clippy
+        args: [--all-targets, --all-features, --warn, clippy::pedantic]
+
+  - repo: https://github.com/taiki-e/taiki-e
+    rev: v1.0.0
+    hooks:
+      - id: cargo-check
+      - id: cargo-test
+      - id: cargo-doc
+      - id: cargo-fmt
+      - id: cargo-clippy
+        args: [--all-targets, --all-features, --warn, clippy::pedantic]
+
+  - repo: https://github.com/crev-dev/cargo-crev
+    rev: v0.25.0
+    hooks:
+      - id: cargo-crev-verify
+      - id: cargo-crev-review
+
+  - repo: https://github.com/rustsec/rustsec
+    rev: v0.1.0
+    hooks:
+      - id: cargo-audit
