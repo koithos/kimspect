@@ -68,15 +68,46 @@ impl K8sClient {
 }
 
 pub fn extract_registry(image: &str) -> String {
-    if let Some(registry) = image.split('/').next() {
-        if registry.contains('.') || registry.contains(':') {
-            registry.to_string()
-        } else {
-            "docker.io".to_string()
-        }
-    } else {
-        "docker.io".to_string()
+    // Split the image string by '/'
+    let parts: Vec<&str> = image.split('/').collect();
+
+    // If there's only one part, it's a Docker Hub image
+    if parts.len() == 1 {
+        return "docker.io".to_string();
     }
+
+    // Get the potential registry (first part)
+    let potential_registry = parts[0];
+
+    // Check for localhost variants
+    if potential_registry == "localhost"
+        || potential_registry.starts_with("127.0.0.1")
+        || potential_registry == "0.0.0.0"
+    {
+        return potential_registry.to_string();
+    }
+
+    // Check for IP address pattern (rough check)
+    if potential_registry
+        .chars()
+        .all(|c| c.is_ascii_digit() || c == '.')
+        && potential_registry.split('.').count() == 4
+    {
+        return potential_registry.to_string();
+    }
+
+    // Check for registry with port
+    if potential_registry.contains(':') {
+        return potential_registry.to_string();
+    }
+
+    // Check for private/public registry domains
+    if potential_registry.contains('.') {
+        return potential_registry.to_string();
+    }
+
+    // Default to Docker Hub if none of the above matches
+    "docker.io".to_string()
 }
 
 pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
