@@ -15,5 +15,5 @@ repos:
     rev: master
     hooks:
       - id: fmt
-        args: ["--edition", "2018"]
+        args: ["-- --edition", "2018"]
       - id: cargo-check
