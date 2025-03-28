@@ -78,10 +78,45 @@ cd kelper
 cargo build --release
 ```
 
-### Running Tests
+### Testing
+
+Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory and include:
+
+#### Image Processing Tests
+
+- Registry extraction from various image formats
+- Image name and version splitting
+- Handling of different registry types (Docker Hub, GCR, Quay.io, private registries)
+
+#### Pod Processing Tests
+
+- Basic pod with multiple containers
+- Pods without spec
+- Pods with empty containers
+- Containers without images
+- Complex image paths
+- Private registry images
+
+#### Test Coverage
+
+The tests cover various scenarios including:
+
+- Edge cases (missing fields, empty values)
+- Different image formats and registries
+- Error conditions
+- Data structure validation
+
+To run the tests:
 
 ```bash
+# Run all tests
 cargo test
+
+# Run tests with output
+cargo test -- --nocapture
+
+# Run specific test
+cargo test test_process_pod
 ```
 
 ### Pre-commit Hooks
