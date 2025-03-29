@@ -28,29 +28,37 @@ fn create_test_container(name: &str, image: &str) -> Container {
 #[test]
 fn test_extract_registry() {
     let test_cases = vec![
-        // ("nginx:latest", "docker.io"),
-        ("docker.io/library/nginx:latest", "docker.io"),
-        ("gcr.io/google-containers/nginx:latest", "gcr.io"),
-        ("quay.io/coreos/etcd:v3.3.0", "quay.io"),
-        ("my-registry:5000/nginx:latest", "my-registry:5000"),
-        ("localhost:5000/nginx:latest", "localhost:5000"),
-        // ("nginx", "docker.io"),
-        ("", "docker.io"),
-        ("invalid/registry", "docker.io"),
+        ("nginx:latest", "docker.io"),                         // Simple image
+        ("docker.io/library/nginx:latest", "docker.io"),       // Full Docker Hub path
+        ("gcr.io/google-containers/nginx:latest", "gcr.io"),   // GCR
+        ("quay.io/coreos/etcd:v3.3.0", "quay.io"),             // Quay
+        ("my-registry:5000/nginx:latest", "my-registry:5000"), // Private registry with port
+        ("localhost:5000/nginx:latest", "localhost:5000"),     // Localhost with port
+        ("127.0.0.1:5000/nginx:latest", "127.0.0.1:5000"),     // Localhost IP with port
+        ("nginx", "docker.io"),                                // Bare image name
+        ("", "docker.io"),                                     // Empty string
+        ("invalid/registry", "docker.io"),                     // Invalid registry
         (
             "registry.example.com:8080/image:tag",
             "registry.example.com:8080",
-        ),
-        ("registry.example.com/image:tag", "registry.example.com"),
-        ("registry.example.com/image", "registry.example.com"),
+        ), // Domain with port
+        ("registry.example.com/image:tag", "registry.example.com"), // Domain without port
+        ("registry.example.com/image", "registry.example.com"), // Domain without tag
         (
             "registry.example.com/image/subpath:tag",
             "registry.example.com",
-        ),
+        ), // Domain with subpath
+        ("192.168.1.100:5000/image:latest", "192.168.1.100:5000"), // IP address registry
+        ("0.0.0.0:5000/image:latest", "0.0.0.0:5000"),         // Zero IP address
     ];
 
     for (image, expected) in test_cases {
-        assert_eq!(extract_registry(image), expected);
+        assert_eq!(
+            extract_registry(image),
+            expected,
+            "Failed for image: {}",
+            image
+        );
     }
 }
 
