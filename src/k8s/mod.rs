@@ -84,19 +84,24 @@ pub fn extract_registry(image: &str) -> String {
         || potential_registry.starts_with("127.0.0.1")
         || potential_registry == "0.0.0.0"
     {
+        // Handle IP with port (e.g., 127.0.0.1:5000)
+        if parts.len() > 1 && potential_registry.contains(':') {
+            return potential_registry.to_string();
+        }
         return potential_registry.to_string();
     }
 
     // Check for IP address pattern (rough check)
     if potential_registry
         .chars()
-        .all(|c| c.is_ascii_digit() || c == '.')
+        .all(|c| c.is_ascii_digit() || c == '.' || c == ':')
         && potential_registry.split('.').count() == 4
     {
+        // Handle IP with port (e.g., 192.168.1.1:5000)
         return potential_registry.to_string();
     }
 
-    // Check for registry with port
+    // Check for registry with port (e.g., my-registry:5000)
     if potential_registry.contains(':') {
         return potential_registry.to_string();
     }
