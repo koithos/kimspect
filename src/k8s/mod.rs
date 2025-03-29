@@ -143,23 +143,33 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
 }
 
 pub fn split_image(image: &str) -> (String, String) {
-    let parts: Vec<&str> = image.split(':').collect();
-    let (name, version) = if parts.len() > 1 {
-        let image_name = parts[..parts.len() - 1].join(":");
-        let last_part = parts[parts.len() - 1];
+    // First check for a digest (SHA)
+    if let Some(digest_index) = image.find('@') {
+        // We have a digest, get the part before the digest
+        let image_name = &image[..digest_index];
+        let digest = &image[digest_index..]; // includes the @ symbol
 
-        // Check if the last part contains a digest
-        if let Some(digest_index) = last_part.find('@') {
-            let tag = &last_part[..digest_index];
-            let digest = &last_part[digest_index..];
-            (image_name, format!("{}{}", tag, digest))
+        // Now split the image_name by colon to get name and tag
+        if let Some(tag_index) = image_name.rfind(':') {
+            let name = &image_name[..tag_index];
+            let tag = &image_name[tag_index + 1..];
+            // Return name and tag@digest
+            (name.to_string(), format!("{}@{}", tag, &digest[1..]))
         } else {
-            (image_name, last_part.to_string())
+            // No tag present, use "latest" with the digest
+            (image_name.to_string(), format!("latest@{}", &digest[1..]))
         }
     } else {
-        (image.to_string(), "latest".to_string())
-    };
-    (name, version)
+        // No digest, just handle the regular image:tag or image format
+        let parts: Vec<&str> = image.split(':').collect();
+        if parts.len() > 1 {
+            let name = parts[0].to_string();
+            let version = parts[1..].join(":"); // Handles cases with multiple colons
+            (name, version)
+        } else {
+            (image.to_string(), "latest".to_string())
+        }
+    }
 }
 
 pub fn display_pod_images(images: &[PodImage]) {
