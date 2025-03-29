@@ -72,43 +72,61 @@ pub fn extract_registry(image: &str) -> String {
     // Split the image string by '/'
     let parts: Vec<&str> = image.split('/').collect();
 
-    // If there's only one part, it's a Docker Hub image
+    // If there's only one part (e.g., "ubuntu" or "nginx"), it's a Docker Hub official image
     if parts.len() == 1 {
+        return "docker.io".to_string();
+    }
+
+    // If there are two parts without dots or colons in the first part (e.g., "library/ubuntu"),
+    // it's likely a Docker Hub image with namespace
+    if parts.len() == 2 && !parts[0].contains('.') && !parts[0].contains(':') {
         return "docker.io".to_string();
     }
 
     // Get the potential registry (first part)
     let potential_registry = parts[0];
 
-    // Check for localhost variants
+    // Check for localhost variants with or without port
     if potential_registry == "localhost"
+        || potential_registry.starts_with("localhost:")
         || potential_registry.starts_with("127.0.0.1")
-        || potential_registry == "0.0.0.0"
+        || potential_registry.starts_with("0.0.0.0")
     {
-        // Handle IP with port (e.g., 127.0.0.1:5000)
-        if parts.len() > 1 && potential_registry.contains(':') {
+        return potential_registry.to_string();
+    }
+
+    // Check for IP address pattern (more comprehensive check)
+    let ip_parts: Vec<&str> = potential_registry.split(':').collect();
+    let ip = ip_parts[0];
+    if ip.split('.').filter(|&p| !p.is_empty()).count() == 4
+        && ip.split('.').all(|p| p.parse::<u8>().is_ok())
+    {
+        return potential_registry.to_string();
+    }
+
+    // Check for known public registries
+    let known_registries = [
+        "docker.io",
+        "registry.hub.docker.com",
+        "ghcr.io",
+        "gcr.io",
+        "quay.io",
+        "registry.gitlab.com",
+        "mcr.microsoft.com",
+        "registry.k8s.io",
+        "public.ecr.aws",
+        "docker.pkg.github.com",
+        "pkg.dev",
+    ];
+
+    for registry in &known_registries {
+        if potential_registry == *registry || potential_registry.ends_with(*registry) {
             return potential_registry.to_string();
         }
-        return potential_registry.to_string();
     }
 
-    // Check for IP address pattern (rough check)
-    if potential_registry
-        .chars()
-        .all(|c| c.is_ascii_digit() || c == '.' || c == ':')
-        && potential_registry.split('.').count() == 4
-    {
-        // Handle IP with port (e.g., 192.168.1.1:5000)
-        return potential_registry.to_string();
-    }
-
-    // Check for registry with port (e.g., my-registry:5000)
-    if potential_registry.contains(':') {
-        return potential_registry.to_string();
-    }
-
-    // Check for private/public registry domains
-    if potential_registry.contains('.') {
+    // For any domain with dots (e.g., "my-registry.example.com") or with port (e.g., "registry:5000")
+    if potential_registry.contains('.') || potential_registry.contains(':') {
         return potential_registry.to_string();
     }
 
@@ -146,29 +164,52 @@ pub fn split_image(image: &str) -> (String, String) {
     // First check for a digest (SHA)
     if let Some(digest_index) = image.find('@') {
         // We have a digest, get the part before the digest
-        let image_name = &image[..digest_index];
+        let image_with_tag = &image[..digest_index];
         let digest = &image[digest_index..]; // includes the @ symbol
 
-        // Now split the image_name by colon to get name and tag
-        if let Some(tag_index) = image_name.rfind(':') {
-            let name = &image_name[..tag_index];
-            let tag = &image_name[tag_index + 1..];
-            // Return name and tag@digest
-            (name.to_string(), format!("{}@{}", tag, &digest[1..]))
+        // Find the last colon which separates the image name from the tag
+        if let Some(tag_index) = image_with_tag.rfind(':') {
+            // Check if this colon is part of a port number in the registry
+            // Look for slashes to determine if this is likely a registry port
+            let last_slash_index = image_with_tag.rfind('/').unwrap_or(0);
+
+            if tag_index > last_slash_index {
+                // This colon is after the last slash, so it's a tag separator
+                let name = &image_with_tag[..tag_index];
+                let tag = &image_with_tag[tag_index + 1..];
+                return (name.to_string(), format!("{}@{}", tag, &digest[1..]));
+            } else {
+                // This colon is part of the registry address, no tag specified
+                return (
+                    image_with_tag.to_string(),
+                    format!("latest@{}", &digest[1..]),
+                );
+            }
         } else {
             // No tag present, use "latest" with the digest
-            (image_name.to_string(), format!("latest@{}", &digest[1..]))
+            return (
+                image_with_tag.to_string(),
+                format!("latest@{}", &digest[1..]),
+            );
         }
     } else {
-        // No digest, just handle the regular image:tag or image format
-        let parts: Vec<&str> = image.split(':').collect();
-        if parts.len() > 1 {
-            let name = parts[0].to_string();
-            let version = parts[1..].join(":"); // Handles cases with multiple colons
-            (name, version)
-        } else {
-            (image.to_string(), "latest".to_string())
+        // No digest, handle image name and tag
+        // Find the last colon which might separate the image name from the tag
+        if let Some(tag_index) = image.rfind(':') {
+            // Check if this colon is part of a port number in the registry
+            // Look for slashes to determine if this is likely a registry port
+            let last_slash_index = image.rfind('/').unwrap_or(0);
+
+            if tag_index > last_slash_index {
+                // This colon is after the last slash, so it's a tag separator
+                let name = &image[..tag_index];
+                let tag = &image[tag_index + 1..];
+                return (name.to_string(), tag.to_string());
+            }
         }
+
+        // No valid tag separator found
+        return (image.to_string(), "latest".to_string());
     }
 }
 
