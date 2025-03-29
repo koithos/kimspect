@@ -7,6 +7,7 @@ use prettytable::{row, Table};
 #[derive(Debug)]
 pub struct PodImage {
     pub pod_name: String,
+    pub node_name: String,
     pub namespace: String,
     pub container_name: String,
     pub image_name: String,
@@ -131,6 +132,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     container_name: container.name.clone(),
                     image_name,
                     image_version,
+                    node_name: spec.node_name.clone().unwrap_or_default(),
                     registry: extract_registry(image),
                 });
             }
@@ -144,7 +146,16 @@ pub fn split_image(image: &str) -> (String, String) {
     let parts: Vec<&str> = image.split(':').collect();
     let (name, version) = if parts.len() > 1 {
         let image_name = parts[..parts.len() - 1].join(":");
-        (image_name, parts[parts.len() - 1].to_string())
+        let last_part = parts[parts.len() - 1];
+
+        // Check if the last part contains a digest
+        if let Some(digest_index) = last_part.find('@') {
+            let tag = &last_part[..digest_index];
+            let digest = &last_part[digest_index..];
+            (image_name, format!("{}{}", tag, digest))
+        } else {
+            (image_name, last_part.to_string())
+        }
     } else {
         (image.to_string(), "latest".to_string())
     };
@@ -158,6 +169,7 @@ pub fn display_pod_images(images: &[PodImage]) {
     let mut table = Table::new();
     table.add_row(row![
         "Pod Name",
+        "Node",
         "Namespace",
         "Container",
         "Image Name",
@@ -168,6 +180,7 @@ pub fn display_pod_images(images: &[PodImage]) {
     for image in images {
         table.add_row(row![
             image.pod_name,
+            image.node_name,
             image.namespace,
             image.container_name,
             image.image_name,
