@@ -142,11 +142,11 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
 
 pub fn split_image(image: &str) -> (String, String) {
     let parts: Vec<&str> = image.split(':').collect();
-    let name = parts[0].to_string();
-    let version = if parts.len() > 1 {
-        parts[1].to_string()
+    let (name, version) = if parts.len() > 1 {
+        let image_name = parts[..parts.len() - 1].join(":");
+        (image_name, parts[parts.len() - 1].to_string())
     } else {
-        "latest".to_string()
+        (image.to_string(), "latest".to_string())
     };
     (name, version)
 }
