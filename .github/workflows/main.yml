@@ -1,0 +1,32 @@
+name: Main Branch CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - name: Setup Kubernetes
+        uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: test-cluster
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+      - name: Package
+        uses: actions-rs/cargo@v1
+        with:
+          command: package

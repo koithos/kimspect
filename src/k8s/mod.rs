@@ -134,32 +134,6 @@ pub fn extract_registry(image: &str) -> String {
     "docker.io".to_string()
 }
 
-pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
-    let mut pod_images = Vec::new();
-    let pod_name = pod.metadata.name.clone().unwrap_or_default();
-    let namespace = pod.metadata.namespace.clone().unwrap_or_default();
-
-    if let Some(spec) = &pod.spec {
-        let containers = &spec.containers;
-        for container in containers {
-            if let Some(image) = &container.image {
-                let (image_name, image_version) = split_image(image);
-                pod_images.push(PodImage {
-                    pod_name: pod_name.clone(),
-                    namespace: namespace.clone(),
-                    container_name: container.name.clone(),
-                    image_name,
-                    image_version,
-                    node_name: spec.node_name.clone().unwrap_or_default(),
-                    registry: extract_registry(image),
-                });
-            }
-        }
-    }
-
-    pod_images
-}
-
 pub fn split_image(image: &str) -> (String, String) {
     // First check for a digest (SHA)
     if let Some(digest_index) = image.find('@') {
@@ -211,6 +185,32 @@ pub fn split_image(image: &str) -> (String, String) {
         // No valid tag separator found
         return (image.to_string(), "latest".to_string());
     }
+}
+
+pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
+    let mut pod_images = Vec::new();
+    let pod_name = pod.metadata.name.clone().unwrap_or_default();
+    let namespace = pod.metadata.namespace.clone().unwrap_or_default();
+
+    if let Some(spec) = &pod.spec {
+        let containers = &spec.containers;
+        for container in containers {
+            if let Some(image) = &container.image {
+                let (image_name, image_version) = split_image(image);
+                pod_images.push(PodImage {
+                    pod_name: pod_name.clone(),
+                    namespace: namespace.clone(),
+                    container_name: container.name.clone(),
+                    image_name,
+                    image_version,
+                    node_name: spec.node_name.clone().unwrap_or_default(),
+                    registry: extract_registry(image),
+                });
+            }
+        }
+    }
+
+    pod_images
 }
 
 pub fn display_pod_images(images: &[PodImage], show_node: bool) {
