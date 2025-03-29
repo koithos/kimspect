@@ -213,31 +213,55 @@ pub fn split_image(image: &str) -> (String, String) {
     }
 }
 
-pub fn display_pod_images(images: &[PodImage]) {
+pub fn display_pod_images(images: &[PodImage], show_node: bool) {
     println!("\n{}", "Pod Images and Registries:".green().bold());
     println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
-    table.add_row(row![
-        "Pod Name",
-        "Node",
-        "Namespace",
-        "Container",
-        "Image Name",
-        "Version",
-        "Registry"
-    ]);
+    let headers = if show_node {
+        row![
+            "Pod Name",
+            "Node",
+            "Namespace",
+            "Container",
+            "Image Name",
+            "Version",
+            "Registry"
+        ]
+    } else {
+        row![
+            "Pod Name",
+            "Namespace",
+            "Container",
+            "Image Name",
+            "Version",
+            "Registry"
+        ]
+    };
+    table.add_row(headers);
 
     for image in images {
-        table.add_row(row![
-            image.pod_name,
-            image.node_name,
-            image.namespace,
-            image.container_name,
-            image.image_name,
-            image.image_version,
-            image.registry.yellow()
-        ]);
+        let row = if show_node {
+            row![
+                image.pod_name,
+                image.node_name.as_str(),
+                image.namespace,
+                image.container_name,
+                image.image_name,
+                image.image_version,
+                image.registry.yellow()
+            ]
+        } else {
+            row![
+                image.pod_name,
+                image.namespace,
+                image.container_name,
+                image.image_name,
+                image.image_version,
+                image.registry.yellow()
+            ]
+        };
+        table.add_row(row);
     }
 
     table.printstd();
