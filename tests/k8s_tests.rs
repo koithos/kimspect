@@ -120,6 +120,8 @@ fn test_split_image() {
     }
 }
 
+// docker pull kubeflownotebookswg/base:v1.10.0-rc.1@sha256:asdasd
+
 #[test]
 fn test_process_pod() {
     let pod = create_test_pod(
