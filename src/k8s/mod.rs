@@ -40,6 +40,7 @@ impl K8sClient {
         &self,
         namespace: &str,
         node_name: Option<&str>,
+        pod_name: Option<&str>,
     ) -> Result<Vec<PodImage>> {
         let pods: Api<Pod> = if node_name.is_some() {
             Api::all(self.client.clone())
@@ -54,6 +55,7 @@ impl K8sClient {
 
         let mut all_images = Vec::new();
         for pod in pods_list {
+            // Filter by node if specified
             if let Some(node) = node_name {
                 if let Some(pod_node) = pod.spec.as_ref().and_then(|s| s.node_name.as_deref()) {
                     if pod_node != node {
@@ -61,6 +63,16 @@ impl K8sClient {
                     }
                 }
             }
+
+            // Filter by pod name if specified
+            if let Some(name) = pod_name {
+                if let Some(pod_name) = &pod.metadata.name {
+                    if pod_name != name {
+                        continue;
+                    }
+                }
+            }
+
             all_images.extend(process_pod(&pod));
         }
 

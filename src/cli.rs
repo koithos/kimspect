@@ -26,5 +26,8 @@ pub enum GetResource {
         /// Node name to filter pods (optional)
         #[arg(short, long)]
         node: Option<String>,
+        /// Pod name to filter images (optional)
+        #[arg(short, long)]
+        pod: Option<String>,
     },
 }
