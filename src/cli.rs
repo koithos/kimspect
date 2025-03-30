@@ -24,7 +24,10 @@ pub enum GetResource {
         #[arg(short, long, default_value = "default")]
         namespace: String,
         /// Node name to filter pods (optional)
-        #[arg(short, long)]
+        #[arg(short = 'N', long = "node")]
         node: Option<String>,
+        /// Pod name to filter images (optional)
+        #[arg(short, long)]
+        pod: Option<String>,
     },
 }
