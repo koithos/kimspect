@@ -1,11 +1,12 @@
 # Kelper
 
-A CLI tool to query Kubernetes pod images and their registries. Kelper helps you quickly inspect container images running in your Kubernetes clusters, with support for filtering by namespace and node.
+A CLI tool to query Kubernetes pod images and their registries. Kelper helps you quickly inspect container images running in your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
 
 ## Features
 
 - List all pod images in a namespace
 - Filter pod images by node name
+- Filter pod images by pod name
 - Display image details in a clean tabular format
 - Show image names and versions separately
 - Identify image registries
@@ -31,10 +32,28 @@ kelper get images --namespace default
 To list all pod images running on a specific node across all namespaces:
 
 ```bash
+kelper get images -N node-name
+# or
 kelper get images --node node-name
 ```
 
 Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
+
+### List Images for a Specific Pod
+
+To list images for a specific pod:
+
+```bash
+kelper get images -p pod-name
+# or
+kelper get images --pod pod-name
+```
+
+You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
+
+```bash
+kelper get images -N node-name -p pod-name
+```
 
 ## Output Format
 
@@ -73,7 +92,7 @@ The output includes:
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/kelper.git
+# clone kelper project
 cd kelper
 cargo build --release
 ```
