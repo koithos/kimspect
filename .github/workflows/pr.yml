@@ -34,6 +34,9 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v3
+      - name: Install macOS dependencies
+        if: ${{ matrix.platform.os == 'macos-latest' }}
+        run: brew install coreutils
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
@@ -49,9 +52,6 @@ jobs:
         with:
           command: build
           args: --target=${{ matrix.platform.target }}
-      - name: Install macOS dependencies
-        if: ${{ matrix.platform.os == 'macos-latest' }}
-        run: brew install coreutils
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
