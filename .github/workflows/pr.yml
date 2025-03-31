@@ -23,7 +23,9 @@ jobs:
           command: fmt
           args: --all -- --check
   build-and-test:
+    timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
         version: [1.85.0, stable]
         platform:
