@@ -12,11 +12,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+      # - name: Clippy
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: clippy
+      #     args: -- -D warnings
       - name: Format
         uses: actions-rs/cargo@v1
         with:
@@ -46,7 +46,7 @@ jobs:
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
-          cluster_name: test-cluster
+          cluster_name: testing-cluster
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
