@@ -39,7 +39,7 @@ jobs:
         run: |
           brew install coreutils
           brew install --cask docker
-          open -a Docker
+          open -a Docker --args --unattended
           while ! docker system info > /dev/null 2>&1; do sleep 1; done
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
