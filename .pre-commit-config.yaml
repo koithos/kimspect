@@ -15,4 +15,8 @@ repos:
     rev: master
     hooks:
       - id: fmt
+        args:
+          - --all
+          - --
+          - --check
       - id: cargo-check
