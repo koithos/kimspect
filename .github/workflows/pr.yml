@@ -34,30 +34,9 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Docker
+      - name: Set up Docker
         if: ${{ matrix.platform.os == 'macos-latest' }}
-        run: |
-          # Install Docker Desktop for Mac via brew
-          brew install --cask docker
-
-          # Start Docker Desktop and wait for it to be ready
-          open -a Docker
-
-          # Wait for Docker Desktop to start
-          echo "Waiting for Docker to start..."
-          timeout=120
-          while ! docker info > /dev/null 2>&1; do
-            if [ $timeout -le 0 ]; then
-              echo "Docker failed to start within timeout"
-              exit 1
-            fi
-            timeout=$((timeout - 1))
-            sleep 1
-          done
-
-          echo "Docker started successfully"
-          docker version
-          docker info
+        uses: docker/setup-docker-action@v4
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
