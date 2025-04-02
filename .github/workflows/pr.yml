@@ -35,6 +35,9 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: install macOs dependencies
+        if: ${{ matrix.platform.os == 'macos-13' }}
+        run: brew install coreutils
       - name: Set up Docker
         if: ${{ matrix.platform.os == 'macos-13' }}
         uses: docker/setup-docker-action@v4
