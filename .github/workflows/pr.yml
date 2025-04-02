@@ -39,10 +39,10 @@ jobs:
         if: ${{ matrix.platform.os == 'macos-latest' }}
         run: |
           # Install colima
-          brew install colima
+          brew install colima qemu
 
           # Start colima with containerd runtime
-          colima start --runtime containerd
+          colima start --vm=qemu --runtime containerd
 
           # Verify Docker is working
           while ! docker system info &> /dev/null; do
