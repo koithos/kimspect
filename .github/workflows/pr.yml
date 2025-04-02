@@ -42,7 +42,7 @@ jobs:
           brew install colima qemu
 
           # Start colima with containerd runtime
-          colima start --vm=qemu --runtime containerd
+          colima start --vm-type=qemu --runtime containerd
 
           # Verify Docker is working
           while ! docker system info &> /dev/null; do
