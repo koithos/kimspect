@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker
-        if: ${{ matrix.platform.os == 'macos-latest' }}
+        if: ${{ matrix.platform.os == 'macos-14' }}
         uses: docker/setup-docker-action@v4
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
