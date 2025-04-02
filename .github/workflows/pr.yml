@@ -38,23 +38,18 @@ jobs:
       - name: Install macOS dependencies
         if: ${{ matrix.platform.os == 'macos-latest' }}
         run: |
-          # Install Homebrew if not present
-          # if ! command -v brew &> /dev/null; then
-          #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          # fi
+          # Install colima
+          brew install colima
 
-          # Install coreutils and Docker
-          brew install coreutils
-          brew install --cask docker
+          # Start colima with containerd runtime
+          colima start --runtime containerd
 
-          # Start Docker in background mode
-          nohup /Applications/Docker.app/Contents/MacOS/Docker --unattended &> /dev/null &
-
-          # Wait for Docker to be ready
+          # Verify Docker is working
           while ! docker system info &> /dev/null; do
             echo "Waiting for Docker to start..."
             sleep 5
           done
+          echo "Docker started successfully!"
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
