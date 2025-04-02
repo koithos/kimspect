@@ -33,16 +33,21 @@ jobs:
           - { os: macos-latest, target: x86_64-apple-darwin }
     runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install macOS dependencies
         if: ${{ matrix.platform.os == 'macos-latest' }}
         run: |
-          brew install coreutils
-          brew install --cask docker
-          # Wait for Docker to be installed before trying to open it
-          while [ ! -d /Applications/Docker.app ]; do sleep 1; done
-          open -a Docker --args --unattended
-          while ! docker system info > /dev/null 2>&1; do sleep 1; done
+          # Install Docker CLI only
+          brew install docker
+
+          # Start Docker daemon
+          sudo dockerd &
+
+          # Wait for Docker to be ready
+          while ! docker system info &> /dev/null; do
+            echo "Waiting for Docker to start..."
+            sleep 5
+          done
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
