@@ -34,14 +34,21 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Install macOS dependencies
         if: ${{ matrix.platform.os == 'macos-latest' }}
         run: |
-          # Install Docker CLI only
-          brew install docker
+          # Install Homebrew if not present
+          # if ! command -v brew &> /dev/null; then
+          #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # fi
 
-          # Start Docker daemon
-          sudo dockerd &
+          # Install coreutils and Docker
+          brew install coreutils
+          brew install --cask docker
+
+          # Start Docker in background mode
+          nohup /Applications/Docker.app/Contents/MacOS/Docker --unattended &> /dev/null &
 
           # Wait for Docker to be ready
           while ! docker system info &> /dev/null; do
