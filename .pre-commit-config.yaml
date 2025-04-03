@@ -15,4 +15,19 @@ repos:
     rev: master
     hooks:
       - id: fmt
+        args:
+          - --all
+          - --
+          - --check
+          - --color
+          - always
       - id: cargo-check
+
+  - repo: local
+    hooks:
+      - id: clippy-check
+        name: clippy-check
+        description: Checks all the code for lint errors
+        entry: cargo clippy --fix --no-deps --allow-dirty --allow-staged
+        language: system
+        pass_filenames: false

@@ -6,22 +6,51 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+        shell: bash
+      - name: Format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check --color always
+  build:
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [1.85.0, stable]
+        platform:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.version }}
           override: true
+          target: ${{ matrix.platform.target }}
+          components: clippy, rustfmt
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --target=${{ matrix.platform.target }}
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
-          cluster_name: test-cluster
+          cluster_name: testing-cluster
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
