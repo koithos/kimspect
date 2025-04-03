@@ -163,20 +163,20 @@ pub fn split_image(image: &str) -> (String, String) {
                 // This colon is after the last slash, so it's a tag separator
                 let name = &image_with_tag[..tag_index];
                 let tag = &image_with_tag[tag_index + 1..];
-                return (name.to_string(), format!("{}@{}", tag, &digest[1..]));
+                (name.to_string(), format!("{}@{}", tag, &digest[1..]))
             } else {
                 // This colon is part of the registry address, no tag specified
-                return (
+                (
                     image_with_tag.to_string(),
                     format!("latest@{}", &digest[1..]),
-                );
+                )
             }
         } else {
             // No tag present, use "latest" with the digest
-            return (
+            (
                 image_with_tag.to_string(),
                 format!("latest@{}", &digest[1..]),
-            );
+            )
         }
     } else {
         // No digest, handle image name and tag
@@ -195,7 +195,7 @@ pub fn split_image(image: &str) -> (String, String) {
         }
 
         // No valid tag separator found
-        return (image.to_string(), "latest".to_string());
+        (image.to_string(), "latest".to_string())
     }
 }
 
