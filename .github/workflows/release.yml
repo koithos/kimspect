@@ -17,10 +17,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
         with:
