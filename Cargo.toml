@@ -1,6 +1,6 @@
 [package]
 name = "kelper"
-version = "0.1.0"
+version = "0.0.2"
 authors = ["Ali Abbas Jaffri <ali.abbasjaffri@live.com>"]
 description = "A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes"
 keywords = ["k8s", "search", "pattern"]
@@ -9,6 +9,7 @@ categories = ["command-line-utilities"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
 rust-version = "1.85"
+build = "build.rs"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
