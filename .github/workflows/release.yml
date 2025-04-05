@@ -32,15 +32,15 @@ jobs:
           args: --release --target=${{ matrix.platform.target }}
       - name: Rename Binary for Windows
         if: matrix.platform.os == 'windows-latest'
-        run: mv target/${{ matrix.platform.target }}/release/kelper.exe target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.exe
+        run: mv target/${{ matrix.platform.target }}/release/kelper.exe target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}.exe
       - name: Rename Binary for Unix-like
         if: matrix.platform.os != 'windows-latest'
-        run: mv target/${{ matrix.platform.target }}/release/kelper target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}
+        run: mv target/${{ matrix.platform.target }}/release/kelper target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kelper-${{ matrix.platform.target }} # Unique name per artifact
-          path: target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}* # Upload the renamed binary (include .exe for windows)
+          name: kelper-${{ github.ref_name }}-${{ matrix.platform.target }} # Unique name per artifact
+          path: target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}* # Upload the renamed binary (include .exe for windows)
 
   release:
     name: Create Release, Publish Crate, and Update Homebrew
@@ -75,6 +75,11 @@ jobs:
           amd64_artifact_path: dist/kelper-x86_64-apple-darwin/kelper-x86_64-apple-darwin
           arm64_artifact_path: dist/kelper-aarch64-apple-darwin/kelper-aarch64-apple-darwin
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update new version for kelper in krew-index
+        uses: rajatjindal/krew-release-bot@v0.0.47
+        with:
+          krew_template_file: .krew/kelper.yml
 
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
