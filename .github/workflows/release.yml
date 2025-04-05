@@ -5,18 +5,64 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    name: Build multi-platform binaries
+    strategy:
+      matrix:
+        rust_toolchain: [stable]
+        platform:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl }
+          - { os: ubuntu-latest, target: aarch64-unknown-linux-musl }
+          - { os: macOS-latest, target: x86_64-apple-darwin }
+          - { os: macOS-latest, target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust_toolchain }}
           override: true
+          target: ${{ matrix.platform.target }}
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --release --target=${{ matrix.platform.target }}
+      - name: Rename Binary for Windows
+        if: matrix.platform.os == 'windows-latest'
+        run: mv target/${{ matrix.platform.target }}/release/kelper.exe target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.exe
+      - name: Rename Binary for Unix-like
+        if: matrix.platform.os != 'windows-latest'
+        run: mv target/${{ matrix.platform.target }}/release/kelper target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kelper-${{ matrix.platform.target }} # Unique name per artifact
+          path: target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}* # Upload the renamed binary (include .exe for windows)
+
+  release:
+    name: Create Release and Publish
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download All Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+      - name: List downloaded files
+        run: ls -R dist/
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
         with:
