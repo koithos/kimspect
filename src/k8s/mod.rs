@@ -21,10 +21,56 @@ pub struct K8sClient {
 
 impl K8sClient {
     pub async fn new() -> Result<Self> {
+        // Check if KUBECONFIG environment variable is set
+        if std::env::var("KUBECONFIG").is_err() {
+            // Check for default kubeconfig location
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| String::from(""));
+            let default_kubeconfig = format!("{}/.kube/config", home_dir);
+
+            if !std::path::Path::new(&default_kubeconfig).exists() {
+                anyhow::bail!("No kubeconfig found. Make sure you have a valid kubeconfig at ~/.kube/config or set the KUBECONFIG environment variable.");
+            }
+        }
+
+        // If we get here, a kubeconfig likely exists, so we try to create the client
         let client = Client::try_default()
             .await
-            .context("Failed to create kube client")?;
-        Ok(Self { client })
+            .context("Failed to create kube client. Please check your kubeconfig file.")?;
+
+        // Create the client instance
+        let k8s_client = Self { client };
+
+        // Verify cluster accessibility
+        if !k8s_client.is_accessible().await? {
+            anyhow::bail!("Kubernetes cluster is not accessible. Please check your connection and cluster status.");
+        }
+
+        Ok(k8s_client)
+    }
+
+    pub async fn is_accessible(&self) -> Result<bool> {
+        // Try to access the API server by making a simple request
+        let api: Api<Pod> = Api::namespaced(self.client.clone(), "default");
+
+        // We're just checking if we can connect, not if there are pods
+        match api.list(&Default::default()).await {
+            Ok(_) => Ok(true),
+            Err(e) => {
+                // Use the error's Debug representation which includes all details
+                let error_message = format!("{:?}", e);
+
+                // Check if this is an API error which we can extract more details from
+                if let kube::Error::Api(api_err) = &e {
+                    anyhow::bail!(
+                        "Kubernetes API error: {} ({})",
+                        api_err.message,
+                        api_err.reason
+                    )
+                } else {
+                    anyhow::bail!("Failed to connect to Kubernetes cluster: {}", error_message)
+                }
+            }
+        }
     }
 
     pub async fn is_initialized(&self) -> Result<bool> {
