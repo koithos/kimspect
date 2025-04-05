@@ -39,6 +39,20 @@ jobs:
           override: true
           target: ${{ matrix.platform.target }}
           components: clippy, rustfmt
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
