@@ -18,10 +18,6 @@ inputs:
     description: "Path to the formula file within the tap repository (e.g., Formula/kelper.rb)"
     required: true
     default: "Formula/kelper.rb"
-  commit_message:
-    description: "Commit message for the formula update"
-    required: false
-    default: "Brew formula update for version ${{ inputs.release_tag }}"
   repository:
     description: "Repository name for the formula"
     required: true
@@ -54,9 +50,9 @@ runs:
           "${{ inputs.repository }}" \\
           "${{ steps.shas.outputs.amd64_sha256 }}" \\
           "${{ steps.shas.outputs.arm64_sha256 }}" \\
-          "${{ inputs.commit_message }}" \\
-          "${{ inputs.tap_token }}" # Pass tap_token as argument
+          "Brew formula update for version ${{ inputs.release_tag }}" \\
+          "${{ inputs.tap_token }}"
       shell: bash
       env:
         # Pass the secret to the environment for git operations within the script
-        GITHUB_TOKEN: ${{ secrets.tap_token }}
+        GITHUB_TOKEN: ${{ inputs.tap_token }}
