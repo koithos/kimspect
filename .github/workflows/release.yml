@@ -33,7 +33,7 @@ jobs:
       - name: Create compressed binary for krew on Windows
         if: matrix.platform.os == 'windows-latest'
         run: |
-          cp LICENSE target/${{ matrix.platform.target }}/release/
+          Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
           Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
 
       - name: Create compressed binary for krew on Unix-like
