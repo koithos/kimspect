@@ -51,45 +51,18 @@ jobs:
           echo "Calculated SHA256 (arm64): $ARM64_SHA for path: ${{ inputs.arm64_artifact_path }}"
 
       - name: Update Homebrew Formula Script
+        id: update_script
         run: |
-          set -e # Exit immediately if a command exits with a non-zero status.
-
-          TAP_REPO="${{ inputs.tap_repo }}"
-          FORMULA_PATH="${{ inputs.formula_path }}"
-          TAP_DIR=$(basename "$TAP_REPO")
-          RELEASE_TAG="${{ inputs.release_tag }}"
-          AMD64_URL="https://github.com/${{ inputs.repository }}/releases/download/${{ inputs.release_tag }}/kelper-x86_64-apple-darwin"
-          ARM64_URL="https://github.com/${{ inputs.repository }}/releases/download/${{ inputs.release_tag }}/kelper-aarch64-apple-darwin"
-          AMD64_SHA="${{ steps.shas.outputs.amd64_sha256 }}"
-          ARM64_SHA="${{ steps.shas.outputs.arm64_sha256 }}"
-          COMMIT_MESSAGE="${{ inputs.commit_message }}"
-
-          echo "Cloning tap repository $TAP_REPO..."
-          git clone "https://x-access-token:${{ secrets.tap_token }}@github.com/${TAP_REPO}.git" "$TAP_DIR"
-          cd "$TAP_DIR"
-
-          echo "Updating formula $FORMULA_PATH for version $RELEASE_TAG..."
-
-          # Use '#' as delimiter for sed to avoid conflicts with '/' in URLs
-          sed -i.bak "s#{{version}}#${RELEASE_TAG}#g" "$FORMULA_PATH"
-          sed -i.bak "s#{{amd64_url}}#${AMD64_URL}#g" "$FORMULA_PATH"
-          sed -i.bak "s#{{amd64_sha256}}#${AMD64_SHA}#g" "$FORMULA_PATH"
-          sed -i.bak "s#{{arm64_url}}#${ARM64_URL}#g" "$FORMULA_PATH"
-          sed -i.bak "s#{{arm64_sha256}}#${ARM64_SHA}#g" "$FORMULA_PATH"
-          rm "${FORMULA_PATH}.bak" # Remove backup files created by sed -i
-
-          echo "Committing and pushing changes..."
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$FORMULA_PATH"
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to the formula file. Skipping commit."
-          else
-            git commit -m "$COMMIT_MESSAGE"
-            git push origin HEAD # Pushes to the default branch (usually main or master)
-            echo "Changes pushed successfully."
-          fi
+          chmod +x ./update-homebrew-formula.sh
+          ./update-homebrew-formula.sh \\
+            "${{ inputs.tap_repo }}" \\
+            "${{ inputs.formula_path }}" \\
+            "${{ inputs.release_tag }}" \\
+            "${{ inputs.repository }}" \\
+            "${{ steps.shas.outputs.amd64_sha256 }}" \\
+            "${{ steps.shas.outputs.arm64_sha256 }}" \\
+            "${{ inputs.commit_message }}" \\
+            "${{ inputs.tap_token }}" # Pass tap_token as argument
         env:
           # Pass the secret to the environment for git operations within the script
           GITHUB_TOKEN: ${{ secrets.tap_token }}
