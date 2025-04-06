@@ -45,6 +45,7 @@ jobs:
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.platform.os }}
     steps:
+      - uses: actions/checkout@v4
       - name: Building ${{ matrix.platform.os }}-${{ matrix.platform.target }}
         uses: ./.github/actions/build.yml
         with:
