@@ -36,7 +36,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Generate Rust build for ${{ matrix.platform.target }}
-        uses: ./.github/actions/build-cli
+        uses: .github/actions/build-cli
         with:
           runner_os: ${{ matrix.platform.os }}
           target_platform: ${{ matrix.platform.target }}

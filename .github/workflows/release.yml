@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Building ${{ matrix.platform.os }}-${{ matrix.platform.target }}
-        uses: ./.github/actions/build-cli
+        uses: .github/actions/build-cli
         with:
           runner_os: ${{ matrix.platform.os }}
           target_platform: ${{ matrix.platform.target }}
