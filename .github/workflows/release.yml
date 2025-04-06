@@ -95,18 +95,6 @@ jobs:
       - name: List downloaded files
         run: ls -lahR dist/
 
-      - name: Download Binaries to Publish Directory
-        uses: actions/download-artifact@v4
-        with:
-          path: publish/
-          pattern: |
-            x86_64-unknown-linux-gnu/kelper-x86_64-unknown-linux-gnu
-            x86_64-apple-darwin/kelper-x86_64-apple-darwin
-            aarch64-apple-darwin/kelper-aarch64-apple-darwin
-            x86_64-pc-windows-msvc/kelper-x86_64-pc-windows-msvc.exe
-      - name: List downloaded publish files
-        run: ls -lahR publish/
-
       - name: Create GitHub Release and Upload Assets
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -136,6 +124,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --target-dir publish/
+          args: --target dist/x86_64-apple-darwin/kelper-x86_64-apple-darwin --target dist/aarch64-apple-darwin/kelper-aarch64-apple-darwin --target dist/x86_64-pc-windows-msvc/kelper-x86_64-pc-windows-msvc.exe --target dist/x86_64-unknown-linux-gnu/kelper-x86_64-unknown-linux-gnu
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
