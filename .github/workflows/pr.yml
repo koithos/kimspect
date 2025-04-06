@@ -34,44 +34,12 @@ jobs:
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - name: Generate Rust build for ${{ matrix.platform.target }}
+        uses: ./.github/actions/build.yml
         with:
-          toolchain: ${{ matrix.rust_toolchain }}
-          override: true
-          target: ${{ matrix.platform.target }}
-          components: clippy, rustfmt
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-
-
-      - name: Build
-        if: matrix.platform.target != 'aarch64-unknown-linux-musl'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.platform.target }}
-
-      - name: Build
-        if: matrix.platform.target == 'aarch64-unknown-linux-musl'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.platform.target }}
-        env:
-          CC_aarch64_unknown_linux_musl: clang
-          AR_aarch64_unknown_linux_musl: llvm-ar
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-Clink-self-contained=yes -Clinker=rust-lld"
+          runner_os: ${{ matrix.platform.os }}
+          target_platform: ${{ matrix.platform.target }}
+          rust_toolchain: ${{ matrix.rust_toolchain }}
   test:
     name: test
     runs-on: ubuntu-latest

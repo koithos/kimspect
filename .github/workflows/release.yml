@@ -45,31 +45,12 @@ jobs:
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - name: Building ${{ matrix.platform.os }}-${{ matrix.platform.target }}
+        uses: ./.github/actions/build.yml
         with:
-          toolchain: ${{ matrix.rust_toolchain }}
-          override: true
-          target: ${{ matrix.platform.target }}
-      - name: Install musl-tools for MUSL targets
-        if: contains(matrix.platform.target, 'musl')
-        run: sudo apt-get update && sudo apt-get install -y install musl-tools clang llvm
-      - name: Build
-        if: matrix.platform.target != 'aarch64-unknown-linux-musl'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.platform.target }}
-      - name: Build
-        if: matrix.platform.target == 'aarch64-unknown-linux-musl'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.platform.target }}
-        env:
-          CC_aarch64_unknown_linux_musl: clang
-          AR_aarch64_unknown_linux_musl: llvm-ar
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-Clink-self-contained=yes -Clinker=rust-lld"
+          runner_os: ${{ matrix.platform.os }}
+          target_platform: ${{ matrix.platform.target }}
+          rust_toolchain: ${{ matrix.rust_toolchain }}
       - name: Create compressed binary for krew on Windows
         if: matrix.platform.os == 'windows-latest'
         run: |
