@@ -49,7 +49,7 @@ runs:
 
     - name: Update Homebrew Formula Script
       id: update_script
-      run: ${GITHUB_ACTION_PATH}/bash update-homebrew-formula.sh
+      run: ${GITHUB_ACTION_PATH}/update-homebrew-formula.sh
       shell: bash
       env:
         TAP_REPO: "${{ inputs.tap_repo }}"
