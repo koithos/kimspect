@@ -5,6 +5,33 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
+  update_version:
+    name: Update Cargo.toml version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cargo-release
+        run: cargo install cargo-release
+
+      - name: Set version in Cargo.toml
+        run: |
+          # Extract version without 'v' prefix
+          VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          echo "Updating Cargo.toml to version $VERSION"
+
+          # Configure Git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Update version using cargo-release (without publishing)
+          cargo release $VERSION --execute --no-publish --no-tag --no-push --no-confirm --sign-commit
+
+          # Push changes
+          git push origin HEAD:main
   build:
     name: Build multi-platform binaries
     strategy:
