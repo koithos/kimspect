@@ -7,8 +7,7 @@ spec:
   shortDescription: A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes
   description: |
     Kelper helps manage your kubernetes resources efficiently by performing multiple commands
-    on nodes and pods are running on. It consists of all the ideal utilities that should have
-    been a part of kubectl
+    on nodes and pods. It consists of all the ideal utilities that should have been a part of kubectl
   homepage: https://github.com/aliabbasjaffri/kelper
   platforms:
     - selector:
