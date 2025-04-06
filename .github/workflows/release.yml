@@ -32,11 +32,15 @@ jobs:
           args: --release --target=${{ matrix.platform.target }}
       - name: Create compressed binary for krew on Windows
         if: matrix.platform.os == 'windows-latest'
-        run: Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
+        run: |
+          Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
+          Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
 
       - name: Create compressed binary for krew on Unix-like
         if: matrix.platform.os != 'windows-latest'
-        run: tar -czvf target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kelper
+        run: |
+          cp LICENSE target/${{ matrix.platform.target }}/release/
+          tar -czvf target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kelper LICENSE
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
