@@ -15,8 +15,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install cargo-release
-        run: cargo install cargo-release
-
+        run: cargo install cargo-release@0.17.4
       - name: Set version in Cargo.toml
         run: |
           # Extract version without 'v' prefix
