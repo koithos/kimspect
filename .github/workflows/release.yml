@@ -30,12 +30,13 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # Update version using cargo-release (without publishing)
-          cargo release $VERSION --execute --no-publish --no-tag --no-push --no-confirm --sign-commit
+          cargo release $VERSION --execute --no-publish --no-tag --no-push --no-confirm
 
           # Push changes
           git push
   build:
     name: Build multi-platform binaries
+    needs: update_version
     strategy:
       fail-fast: false
       matrix:
