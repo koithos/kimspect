@@ -8,6 +8,7 @@ jobs:
   build:
     name: Build multi-platform binaries
     strategy:
+      fail-fast: false
       matrix:
         rust_toolchain: [stable]
         platform:
@@ -25,6 +26,9 @@ jobs:
           toolchain: ${{ matrix.rust_toolchain }}
           override: true
           target: ${{ matrix.platform.target }}
+      - name: Install musl-tools for MUSL targets
+        if: contains(matrix.platform.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
       - name: Build
         uses: actions-rs/cargo@v1
         with:
