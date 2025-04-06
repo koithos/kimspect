@@ -94,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Homebrew Tap
-        uses: ./.github/actions/update-homebrew.yml
+        uses: ./.github/actions/update-homebrew
         with:
           tap_repo: aliabbasjaffri/homebrew-kelper
           release_tag: ${{ github.ref_name }}
