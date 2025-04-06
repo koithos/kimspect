@@ -5,18 +5,83 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    name: Build multi-platform binaries
+    strategy:
+      matrix:
+        rust_toolchain: [stable]
+        platform:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl }
+          - { os: ubuntu-latest, target: aarch64-unknown-linux-musl }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust_toolchain }}
           override: true
+          target: ${{ matrix.platform.target }}
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --release --target=${{ matrix.platform.target }}
+      - name: Create compressed binary for krew on Windows
+        if: matrix.platform.os == 'windows-latest'
+        run: Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
+
+      - name: Create compressed binary for krew on Unix-like
+        if: matrix.platform.os != 'windows-latest'
+        run: tar -czvf target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kelper
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kelper-${{ matrix.platform.target }}
+          path: target/${{ matrix.platform.target }}/release/kelper*
+
+  release:
+    name: Create Release, Publish Crate, and Update Homebrew
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download All Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+      - name: List downloaded files
+        run: ls -lahR dist/
+
+      - name: Create GitHub Release and Upload Assets
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew Tap
+        uses: ./.github/actions/update-homebrew.yml
+        with:
+          tap_repo: aliabbasjaffri/homebrew-kelper
+          release_tag: ${{ github.ref_name }}
+          repository: ${{ github.repository }}
+          amd64_artifact_path: dist/x86_64-apple-darwin/kelper
+          arm64_artifact_path: dist/aarch64-apple-darwin/kelper
+          tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update new version for kelper in krew-index
+        uses: rajatjindal/krew-release-bot@v0.0.47
+        with:
+          krew_template_file: .krew/kelper.yml
+
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
         with:

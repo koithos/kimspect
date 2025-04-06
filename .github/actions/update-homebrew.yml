@@ -1,0 +1,68 @@
+name: Update Homebrew Formula
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      amd64_artifact_path:
+        description: "Path to the downloaded x86_64 macOS binary artifact"
+        required: true
+        type: string
+      arm64_artifact_path:
+        description: "Path to the downloaded aarch64 macOS binary artifact"
+        required: true
+        type: string
+      tap_repo:
+        description: "The owner/repo name of the tap repository (e.g., your-username/homebrew-your-tap-name)"
+        required: true
+        type: string
+      formula_path:
+        description: "Path to the formula file within the tap repository (e.g., Formula/kelper.rb)"
+        required: true
+        type: string
+        default: "Formula/kelper.rb"
+      commit_message:
+        description: "Commit message for the formula update"
+        required: false
+        type: string
+        default: "Brew formula update for version ${{ inputs.release_tag }}"
+      repository:
+        description: "Repository name for the formula"
+        required: true
+        type: string
+      tap_token:
+        description: "GitHub token (PAT) with write access to the tap repository"
+        required: true
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calculate SHA256 for macOS binaries
+        id: shas
+        run: |
+          AMD64_SHA=$(sha256sum "${{ inputs.amd64_artifact_path }}" | awk '{ print $1 }')
+          ARM64_SHA=$(sha256sum "${{ inputs.arm64_artifact_path }}" | awk '{ print $1 }')
+          echo "amd64_sha256=$AMD64_SHA" >> $GITHUB_OUTPUT
+          echo "arm64_sha256=$ARM64_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256 (amd64): $AMD64_SHA for path: ${{ inputs.amd64_artifact_path }}"
+          echo "Calculated SHA256 (arm64): $ARM64_SHA for path: ${{ inputs.arm64_artifact_path }}"
+
+      - name: Update Homebrew Formula Script
+        id: update_script
+        run: |
+          chmod +x ./update-homebrew-formula.sh
+          ./update-homebrew-formula.sh \\
+            "${{ inputs.tap_repo }}" \\
+            "${{ inputs.formula_path }}" \\
+            "${{ inputs.release_tag }}" \\
+            "${{ inputs.repository }}" \\
+            "${{ steps.shas.outputs.amd64_sha256 }}" \\
+            "${{ steps.shas.outputs.arm64_sha256 }}" \\
+            "${{ inputs.commit_message }}" \\
+            "${{ inputs.tap_token }}" # Pass tap_token as argument
+        env:
+          # Pass the secret to the environment for git operations within the script
+          GITHUB_TOKEN: ${{ secrets.tap_token }}

@@ -25,18 +25,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [1.85.0, stable]
+        rust_toolchain: [stable]
         platform:
           - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: macos-latest, target: x86_64-apple-darwin }
     runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ matrix.version }}
+          toolchain: ${{ matrix.rust_toolchain }}
           override: true
           target: ${{ matrix.platform.target }}
           components: clippy, rustfmt
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:

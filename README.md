@@ -13,8 +13,37 @@ A CLI tool to query Kubernetes pod images and their registries. Kelper helps you
 
 ## Installation
 
+Kelper can be installed using several package managers. Choose the one that suits your environment:
+
+### Using Cargo (Rust's Package Manager)
+
+If you have Rust and Cargo installed, you can build and install Kelper directly from the source:
+
 ```bash
 cargo install kelper
+```
+
+### Using Homebrew (macOS)
+
+If you are on macOS and use Homebrew, you can install Kelper via our tap:
+
+```bash
+brew tap aliabbasjaffri/kelper
+brew install kelper
+```
+
+### Using Krew (kubectl Plugin Manager)
+
+If you use `kubectl` and have Krew installed, you can install Kelper as a kubectl plugin:
+
+```bash
+kubectl krew install kelper
+```
+
+After installation via Krew, you can use Kelper as a kubectl command:
+
+```bash
+kubectl kelper get images --namespace default
 ```
 
 ## Usage
@@ -160,6 +189,49 @@ The pre-commit hooks will run automatically on every commit, checking for:
 - Linting (clippy)
 - Security vulnerabilities (cargo-audit)
 - And more...
+
+## Releasing
+
+This project uses `cargo-release` to automate the release process, ensuring that the version in `Cargo.toml` and the Git tag are synchronized.
+
+### Prerequisites
+
+1.  Install `cargo-release`:
+    ```bash
+    cargo install cargo-release
+    ```
+2.  Ensure your working directory is clean (all changes committed).
+3.  Make sure you are on the main branch and have pulled the latest changes.
+4.  Configure `cargo-release` to _not_ publish to crates.io, as the GitHub Actions workflow handles this.
+
+### Steps
+
+1.  Decide on the version bump level (`patch`, `minor`, `major`) or specify an exact version.
+2.  Run the appropriate command:
+
+    ```bash
+    # For a patch release (e.g., 0.1.0 -> 0.1.1)
+    cargo release patch
+
+    # For a minor release (e.g., 0.1.1 -> 0.2.0)
+    cargo release minor
+
+    # For a major release (e.g., 0.2.0 -> 1.0.0)
+    cargo release major
+
+    # To release a specific version
+    cargo release <VERSION> # e.g., cargo release 1.2.3
+    ```
+
+3.  `cargo-release` will:
+
+    - Prompt for confirmation.
+    - Update the version in `Cargo.toml`.
+    - Commit the `Cargo.toml` and `Cargo.lock` changes.
+    - Create a Git tag (e.g., `v1.2.3`).
+    - Push the commit and the tag to the remote repository.
+
+4.  Pushing the tag will automatically trigger the `release.yml` GitHub Actions workflow, which handles building binaries, creating the GitHub Release, updating Homebrew/krew, and publishing to crates.io.
 
 ## License
 
