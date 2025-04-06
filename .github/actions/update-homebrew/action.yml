@@ -12,11 +12,11 @@ inputs:
     description: "Path to the downloaded aarch64 macOS binary artifact"
     required: true
   amd64_artifact_name:
-    description: ""
+    description: "amd64 artifact build name"
     required: true
     default: "kelper-x86_64-apple-darwin"
   arm64_artifact_name:
-    description: ""
+    description: "arm64 artifact build name"
     required: true
     default: "kelper-aarch64-apple-darwin"
   tap_repo:
