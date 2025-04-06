@@ -30,17 +30,18 @@ jobs:
         with:
           command: build
           args: --release --target=${{ matrix.platform.target }}
-      - name: Rename Binary for Windows
+      - name: Create compressed binary for krew on Windows
         if: matrix.platform.os == 'windows-latest'
-        run: mv target/${{ matrix.platform.target }}/release/kelper.exe target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}.exe
-      - name: Rename Binary for Unix-like
+        run: Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
+
+      - name: Create compressed binary for krew on Unix-like
         if: matrix.platform.os != 'windows-latest'
-        run: mv target/${{ matrix.platform.target }}/release/kelper target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}
+        run: tar -czvf target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kelper
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kelper-${{ github.ref_name }}-${{ matrix.platform.target }} # Unique name per artifact
-          path: target/${{ matrix.platform.target }}/release/kelper-${{ github.ref_name }}-${{ matrix.platform.target }}* # Upload the renamed binary (include .exe for windows)
+          name: kelper-${{ matrix.platform.target }}
+          path: target/${{ matrix.platform.target }}/release/kelper*
 
   release:
     name: Create Release, Publish Crate, and Update Homebrew
@@ -72,8 +73,8 @@ jobs:
           tap_repo: aliabbasjaffri/homebrew-kelper
           release_tag: ${{ github.ref_name }}
           repository: ${{ github.repository }}
-          amd64_artifact_path: dist/kelper-${{ github.ref_name }}-x86_64-apple-darwin/kelper-${{ github.ref_name }}-x86_64-apple-darwin
-          arm64_artifact_path: dist/kelper-${{ github.ref_name }}-aarch64-apple-darwin/kelper-${{ github.ref_name }}-aarch64-apple-darwin
+          amd64_artifact_path: dist/x86_64-apple-darwin/kelper
+          arm64_artifact_path: dist/aarch64-apple-darwin/kelper
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update new version for kelper in krew-index
