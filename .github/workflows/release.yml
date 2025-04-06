@@ -61,7 +61,7 @@ jobs:
         run: |
           Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
           Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.zip
-          mv target/${{ matrix.platform.target }}/release/kelper.exe target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.exe
+          Move-Item -Path target/${{ matrix.platform.target }}/release/kelper.exe -Destination target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.exe
 
       - name: Create compressed binary for krew on Unix-like environments
         if: matrix.platform.os != 'windows-latest'
@@ -72,7 +72,7 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kelper-${{ matrix.platform.target }}
+          name: ${{ matrix.platform.target }}
           path: |
             target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}
             target/${{ matrix.platform.target }}/release/*.zip
@@ -109,8 +109,10 @@ jobs:
           tap_repo: aliabbasjaffri/homebrew-kelper
           release_tag: ${{ github.ref_name }}
           repository: ${{ github.repository }}
-          amd64_artifact_path: dist/x86_64-apple-darwin/kelper
-          arm64_artifact_path: dist/aarch64-apple-darwin/kelper
+          amd64_artifact_name: kelper-x86_64-apple-darwin
+          arm64_artifact_name: kelper-aarch64-apple-darwin
+          amd64_artifact_path: dist/x86_64-apple-darwin/kelper-x86_64-apple-darwin
+          arm64_artifact_path: dist/aarch64-apple-darwin/kelper-aarch64-apple-darwin
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update new version for kelper in krew-index
