@@ -109,6 +109,8 @@ jobs:
           tap_repo: aliabbasjaffri/homebrew-kelper
           release_tag: ${{ github.ref_name }}
           repository: ${{ github.repository }}
+          amd64_artifact_name: kelper-x86_64-apple-darwin
+          arm64_artifact_name: kelper-aarch64-apple-darwin
           amd64_artifact_path: dist/x86_64-apple-darwin/kelper-x86_64-apple-darwin
           arm64_artifact_path: dist/aarch64-apple-darwin/kelper-aarch64-apple-darwin
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}

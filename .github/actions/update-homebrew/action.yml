@@ -11,6 +11,14 @@ inputs:
   arm64_artifact_path:
     description: "Path to the downloaded aarch64 macOS binary artifact"
     required: true
+  amd64_artifact_name:
+    description: ""
+    required: true
+    default: "kelper-x86_64-apple-darwin"
+  arm64_artifact_name:
+    description: ""
+    required: true
+    default: "kelper-aarch64-apple-darwin"
   tap_repo:
     description: "The owner/repo name of the tap repository (e.g., your-username/homebrew-your-tap-name)"
     required: true
@@ -50,6 +58,8 @@ runs:
           "${{ inputs.repository }}" \\
           "${{ steps.shas.outputs.amd64_sha256 }}" \\
           "${{ steps.shas.outputs.arm64_sha256 }}" \\
+          "${{ inputs.amd64_artifact_name }}" \\
+          "${{ inputs.arm64_artifact_name }}" \\
           "Brew formula update for version ${{ inputs.release_tag }}" \\
           "${{ inputs.tap_token }}"
       shell: bash
