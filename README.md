@@ -13,8 +13,37 @@ A CLI tool to query Kubernetes pod images and their registries. Kelper helps you
 
 ## Installation
 
+Kelper can be installed using several package managers. Choose the one that suits your environment:
+
+### Using Cargo (Rust's Package Manager)
+
+If you have Rust and Cargo installed, you can build and install Kelper directly from the source:
+
 ```bash
 cargo install kelper
+```
+
+### Using Homebrew (macOS)
+
+If you are on macOS and use Homebrew, you can install Kelper via our tap:
+
+```bash
+brew tap aliabbasjaffri/kelper
+brew install kelper
+```
+
+### Using Krew (kubectl Plugin Manager)
+
+If you use `kubectl` and have Krew installed, you can install Kelper as a kubectl plugin:
+
+```bash
+kubectl krew install kelper
+```
+
+After installation via Krew, you can use Kelper as a kubectl command:
+
+```bash
+kubectl kelper get images --namespace default
 ```
 
 ## Usage
