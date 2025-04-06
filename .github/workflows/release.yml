@@ -22,6 +22,9 @@ jobs:
           VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
           echo "Updating Cargo.toml to version $VERSION"
 
+          # Checkout main
+          git checkout main
+
           # Configure Git
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -30,7 +33,7 @@ jobs:
           cargo release $VERSION --execute --no-publish --no-tag --no-push --no-confirm --sign-commit
 
           # Push changes
-          git push origin HEAD:main
+          git push
   build:
     name: Build multi-platform binaries
     strategy:
@@ -54,18 +57,23 @@ jobs:
         if: matrix.platform.os == 'windows-latest'
         run: |
           Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
-          Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kelper.zip
+          Compress-Archive -Path target/${{ matrix.platform.target }}/release/kelper.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.zip
 
       - name: Create compressed binary for krew on Unix-like
         if: matrix.platform.os != 'windows-latest'
         run: |
           cp LICENSE target/${{ matrix.platform.target }}/release/
           tar -czvf target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kelper LICENSE
+          mv target/${{ matrix.platform.target }}/release/kelper target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: kelper-${{ matrix.platform.target }}
-          path: target/${{ matrix.platform.target }}/release/kelper*
+          path: |
+            target/${{ matrix.platform.target }}/release/kelper-${{ matrix.platform.target }}
+            target/${{ matrix.platform.target }}/release/*.zip
+            target/${{ matrix.platform.target }}/release/*.exe
+            target/${{ matrix.platform.target }}/release/*.tar.gz
 
   release:
     name: Create Release, Publish Crate, and Update Homebrew
