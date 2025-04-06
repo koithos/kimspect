@@ -1,0 +1,41 @@
+name: Build multi platform Rust CLI
+description: Runs build step for multiple platforms to generate Rust Build
+
+inputs:
+  runner_os:
+    description: "Type of OS"
+    required: true
+  target_platform:
+    description: "OS platform"
+    required: true
+  rust_toolchain:
+    description: "Rust toolchain version"
+    required: false
+    default: "stable"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ inputs.rust_toolchain }}
+        override: true
+        target: ${{ inputs.target_platform }}
+        components: clippy, rustfmt
+    - name: Cache dependencies for ${{ inputs.runner_os }}-${{ inputs.target_platform }}
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --target=${{ inputs.target_platform }}

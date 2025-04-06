@@ -25,38 +25,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust_toolchain: [stable]
         platform:
           - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
           - { os: macos-latest, target: x86_64-apple-darwin }
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Generate Rust build for ${{ matrix.platform.target }}
+        uses: ./.github/actions/build-cli
         with:
-          toolchain: ${{ matrix.rust_toolchain }}
-          override: true
-          target: ${{ matrix.platform.target }}
-          components: clippy, rustfmt
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform.target }}-${{ matrix.rust_toolchain }}-cargo-
-
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --target=${{ matrix.platform.target }}
+          runner_os: ${{ matrix.platform.os }}
+          target_platform: ${{ matrix.platform.target }}
+          rust_toolchain: "stable"
   test:
     name: test
     runs-on: ubuntu-latest

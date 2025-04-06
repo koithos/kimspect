@@ -14,13 +14,7 @@ spec:
         matchLabels:
           os: linux
           arch: amd64
-      {{addURIAndSha "https://github.com/aliabbasjaffri/kelper/releases/download/{{ .TagName }}/kelper-{{ .TagName }}-x86_64-unknown-linux-musl.tar.gz" .TagName | indent 6 }}
-      bin: kelper
-    - selector:
-        matchLabels:
-          os: linux
-          arch: arm64
-      {{addURIAndSha "https://github.com/aliabbasjaffri/kelper/releases/download/{{ .TagName }}/kelper-{{ .TagName }}-aarch64-unknown-linux-musl.tar.gz" .TagName | indent 6 }}
+      {{addURIAndSha "https://github.com/aliabbasjaffri/kelper/releases/download/{{ .TagName }}/kelper-{{ .TagName }}-x86_64-unknown-linux-gnu.tar.gz" .TagName | indent 6 }}
       bin: kelper
     - selector:
         matchLabels:
