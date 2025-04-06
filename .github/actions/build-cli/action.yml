@@ -24,7 +24,7 @@ runs:
         components: clippy, rustfmt
     - name: Install musl-tools for MUSL targets
       if: contains(inputs.target_platform, 'musl')
-      run: sudo apt-get update && sudo apt-get install -y install musl-tools clang llvm
+      run: sudo apt-get update && sudo apt-get install -y musl-tools clang llvm
       shell: bash
     - name: Cache dependencies for ${{ inputs.runner_os }}-${{ inputs.target_platform }}
       uses: actions/cache@v4
