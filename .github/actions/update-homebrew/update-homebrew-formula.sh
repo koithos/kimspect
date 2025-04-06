@@ -1,16 +1,5 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status.
-
-TAP_REPO="$1"
-FORMULA_PATH="$2"
-RELEASE_TAG="$3"
-REPOSITORY="$4"
-AMD64_SHA="$5"
-ARM64_SHA="$6"
-AMD64_NAME="$7"
-ARM64_NAME="$8"
-COMMIT_MESSAGE="$9"
-TAP_TOKEN="$10" # Accept tap_token as an argument
+set -e
 
 TAP_DIR=$(basename "$TAP_REPO")
 AMD64_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/${AMD64_NAME}"
@@ -38,12 +27,11 @@ echo "Committing and pushing changes..."
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 git add "$FORMULA_PATH"
-# Check if there are changes to commit
+
 if git diff --staged --quiet; then
   echo "No changes to the formula file. Skipping commit."
 else
   git commit -m "$COMMIT_MESSAGE"
-  # Push changes
   git push
   echo "Changes pushed successfully."
 fi

@@ -49,20 +49,16 @@ runs:
 
     - name: Update Homebrew Formula Script
       id: update_script
-      run: |
-        chmod +x ./update-homebrew-formula.sh
-        ./update-homebrew-formula.sh \\
-          "${{ inputs.tap_repo }}" \\
-          "${{ inputs.formula_path }}" \\
-          "${{ inputs.release_tag }}" \\
-          "${{ inputs.repository }}" \\
-          "${{ steps.shas.outputs.amd64_sha256 }}" \\
-          "${{ steps.shas.outputs.arm64_sha256 }}" \\
-          "${{ inputs.amd64_artifact_name }}" \\
-          "${{ inputs.arm64_artifact_name }}" \\
-          "Brew formula update for version ${{ inputs.release_tag }}" \\
-          "${{ inputs.tap_token }}"
+      run: ${GITHUB_ACTION_PATH}/bash update-homebrew-formula.sh
       shell: bash
       env:
-        # Pass the secret to the environment for git operations within the script
-        GITHUB_TOKEN: ${{ inputs.tap_token }}
+        TAP_REPO: "${{ inputs.tap_repo }}"
+        FORMULA_PATH: "${{ inputs.formula_path }}"
+        RELEASE_TAG: "${{ inputs.release_tag }}"
+        REPOSITORY: "${{ inputs.repository }}"
+        AMD64_SHA: "${{ steps.shas.outputs.amd64_sha256 }}"
+        ARM64_SHA: "${{ steps.shas.outputs.arm64_sha256 }}"
+        AMD64_NAME: "${{ inputs.amd64_artifact_name }}"
+        ARM64_NAME: "${{ inputs.arm64_artifact_name }}"
+        COMMIT_MESSAGE: "Brew formula update for version ${{ inputs.release_tag }}"
+        TAP_TOKEN: "${{ inputs.tap_token }}"
