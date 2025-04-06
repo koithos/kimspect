@@ -18,7 +18,7 @@ runs:
   steps:
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: ["${{ inputs.rust_toolchain }}"]
+        toolchain: ${{ inputs.rust_toolchain }}
         override: true
         target: ${{ inputs.target_platform }}
         components: clippy, rustfmt
