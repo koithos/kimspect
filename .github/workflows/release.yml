@@ -98,13 +98,12 @@ jobs:
       - name: Download Binaries to Publish Directory
         uses: actions/download-artifact@v4
         with:
-          path: publish
-          pattern: | # Download only these specific files across all artifacts
-            kelper-x86_64-unknown-linux-gnu
-            kelper-x86_64-apple-darwin
-            kelper-aarch64-apple-darwin
-            kelper-x86_64-pc-windows-msvc.exe
-
+          path: publish/
+          pattern: |
+            x86_64-unknown-linux-gnu/kelper-x86_64-unknown-linux-gnu
+            x86_64-apple-darwin/kelper-x86_64-apple-darwin
+            aarch64-apple-darwin/kelper-aarch64-apple-darwin
+            x86_64-pc-windows-msvc/kelper-x86_64-pc-windows-msvc.exe
       - name: List downloaded publish files
         run: ls -lahR publish/
 
