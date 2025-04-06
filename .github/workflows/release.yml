@@ -57,7 +57,7 @@ jobs:
         with:
           path: dist/
       - name: List downloaded files
-        run: ls -R dist/
+        run: ls -lahR dist/
 
       - name: Create GitHub Release and Upload Assets
         id: create_release
