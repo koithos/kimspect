@@ -40,51 +40,30 @@ If you use `kubectl` and have Krew installed, you can install Kelper as a kubect
 kubectl krew install kelper
 ```
 
-After installation via Krew, you can use Kelper as a kubectl command:
-
-```bash
-kubectl kelper get images --namespace default
-```
-
 ## Usage
 
-### List Pod Images in a Namespace
-
-To list all pod images in a specific namespace:
+### Get image info with multiple filters
 
 ```bash
+### List Pod Images in a Namespace
 kelper get images --namespace default
-```
 
 ### List Pod Images on a Specific Node
-
-To list all pod images running on a specific node across all namespaces:
-
-```bash
 kelper get images -N node-name
 # or
 kelper get images --node node-name
-```
 
-Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
+
+# Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
 
 ### List Images for a Specific Pod
-
-To list images for a specific pod:
-
-```bash
 kelper get images -p pod-name
 # or
 kelper get images --pod pod-name
-```
 
-You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
-
-```bash
+# You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
 kelper get images -N node-name -p pod-name
 ```
-
-## Output Format
 
 Kelper displays information in a clean tabular format:
 
@@ -100,15 +79,6 @@ Pod Images and Registries:
 +----------------+-----------+------------+------------+---------+-------------+
 ================================================================================
 ```
-
-The output includes:
-
-- Pod Name: The name of the Kubernetes pod
-- Namespace: The Kubernetes namespace
-- Container: The container name within the pod
-- Image Name: The name of the container image
-- Version: The image version/tag
-- Registry: The container registry hosting the image
 
 ## Development
 
