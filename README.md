@@ -1,15 +1,12 @@
 # Kelper
 
-A CLI tool to query Kubernetes pod images and their registries. Kelper helps you quickly inspect container images running in your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
+A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes. Kelper helps you quickly inspect container images, labels and annotations, health and metrics from probes and many more useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
 
 ## Features
 
-- List all pod images in a namespace
-- Filter pod images by node name
-- Filter pod images by pod name
-- Display image details in a clean tabular format
-- Show image names and versions separately
-- Identify image registries
+- [x] List images in a kubernetes cluster based on different filters e.g. image details in pod, namespace or node
+- [ ] Get labels and annotations in a pod, namespace or node
+- [ ] health and metrics from pods or nodes
 
 ## Installation
 
@@ -42,7 +39,7 @@ kubectl krew install kelper
 
 ## Usage
 
-### Get image info with multiple filters
+### Get image details with multiple filters
 
 ```bash
 ### List Pod Images in a Namespace
