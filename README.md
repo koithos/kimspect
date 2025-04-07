@@ -202,36 +202,11 @@ This project uses `cargo-release` to automate the release process, ensuring that
     ```
 2.  Ensure your working directory is clean (all changes committed).
 3.  Make sure you are on the main branch and have pulled the latest changes.
-4.  Configure `cargo-release` to _not_ publish to crates.io, as the GitHub Actions workflow handles this.
 
 ### Steps
 
-1.  Decide on the version bump level (`patch`, `minor`, `major`) or specify an exact version.
-2.  Run the appropriate command:
-
-    ```bash
-    # For a patch release (e.g., 0.1.0 -> 0.1.1)
-    cargo release patch
-
-    # For a minor release (e.g., 0.1.1 -> 0.2.0)
-    cargo release minor
-
-    # For a major release (e.g., 0.2.0 -> 1.0.0)
-    cargo release major
-
-    # To release a specific version
-    cargo release <VERSION> # e.g., cargo release 1.2.3
-    ```
-
-3.  `cargo-release` will:
-
-    - Prompt for confirmation.
-    - Update the version in `Cargo.toml`.
-    - Commit the `Cargo.toml` and `Cargo.lock` changes.
-    - Create a Git tag (e.g., `v1.2.3`).
-    - Push the commit and the tag to the remote repository.
-
-4.  Pushing the tag will automatically trigger the `release.yml` GitHub Actions workflow, which handles building binaries, creating the GitHub Release, updating Homebrew/krew, and publishing to crates.io.
+- Run `bash scripts/cargo_release.sh <VERSION>` to update the version in the `cargo.toml` file
+- Once that is done, push the code to main, and a release workflow will get triggered which would build multi platform binaries and distribute them via multiple channels.
 
 ## License
 
