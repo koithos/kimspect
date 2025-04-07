@@ -130,30 +130,6 @@ cargo build --release
 
 Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory and include:
 
-#### Image Processing Tests
-
-- Registry extraction from various image formats
-- Image name and version splitting
-- Handling of different registry types (Docker Hub, GCR, Quay.io, private registries)
-
-#### Pod Processing Tests
-
-- Basic pod with multiple containers
-- Pods without spec
-- Pods with empty containers
-- Containers without images
-- Complex image paths
-- Private registry images
-
-#### Test Coverage
-
-The tests cover various scenarios including:
-
-- Edge cases (missing fields, empty values)
-- Different image formats and registries
-- Error conditions
-- Data structure validation
-
 To run the tests:
 
 ```bash
@@ -166,29 +142,6 @@ cargo test -- --nocapture
 # Run specific test
 cargo test test_process_pod
 ```
-
-### Pre-commit Hooks
-
-This project uses pre-commit hooks to ensure code quality. To set them up:
-
-1. Install pre-commit:
-
-```bash
-pip install pre-commit
-```
-
-2. Install the git hooks:
-
-```bash
-pre-commit install
-```
-
-The pre-commit hooks will run automatically on every commit, checking for:
-
-- Code formatting (rustfmt)
-- Linting (clippy)
-- Security vulnerabilities (cargo-audit)
-- And more...
 
 ## Releasing
 
@@ -206,7 +159,7 @@ This project uses `cargo-release` to automate the release process, ensuring that
 ### Steps
 
 - Run `bash scripts/cargo_release.sh <VERSION>` to update the version in the `cargo.toml` file
-- Once that is done, push the code to main, and a release workflow will get triggered which would build multi platform binaries and distribute them via multiple channels.
+- Once that is done, push the code to main, and a release workflow will get triggered which would build multi platform binaries and distribute them via multiple channels.g
 
 ## License
 
