@@ -1,12 +1,12 @@
 # Kelper
 
-A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes. Kelper helps you quickly inspect container images, labels and annotations, health and metrics from probes and many more useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
+A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and nodes. Kelper helps you quickly inspect container images, labels, annotations, health metrics from probes, and many other useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
 
 ## Features
 
-- [x] List images in a kubernetes cluster based on different filters e.g. image details in pod, namespace or node
-- [ ] Get labels and annotations in a pod, namespace or node
-- [ ] health and metrics from pods or nodes
+- [x] List images in a Kubernetes cluster based on different filters, e.g., image details in a pod, namespace, or node.
+- [ ] Get labels and annotations in a pod, namespace, or node.
+- [ ] Retrieve health and metrics from pods or nodes.
 
 ## Installation
 
@@ -95,7 +95,7 @@ cargo build --release
 
 ### Testing
 
-Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory and include:
+Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory.
 
 To run the tests:
 
@@ -125,8 +125,8 @@ This project uses `cargo-release` to automate the release process, ensuring that
 
 ### Steps
 
-- Run `bash scripts/cargo_release.sh <VERSION>` to update the version in the `cargo.toml` file
-- Once that is done, push the code to main, and a release workflow will get triggered which would build multi platform binaries and distribute them via multiple channels.g
+- Run `bash scripts/cargo_release.sh <VERSION>` to update the version in the `Cargo.toml` file and create a Git tag.
+- Once that is done, push the code to main, and a release workflow will be triggered which builds multi-platform binaries and distributes them via multiple channels.
 
 ## License
 
