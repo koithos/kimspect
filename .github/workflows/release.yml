@@ -5,40 +5,35 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  # update_version:
-  #   name: Update Cargo.toml version
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - name: Install cargo-release
-  #       run: cargo install cargo-release@0.25.17
-  #     - name: Set version in Cargo.toml
-  #       run: |
-  #         # Extract version without 'v' prefix
-  #         VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
-  #         echo "Updating Cargo.toml to version $VERSION"
-
-  #         # Checkout main
-  #         git checkout main
-
-  #         # Configure Git
-  #         git config --local user.email "github-actions[bot]@users.noreply.github.com"
-  #         git config --local user.name "github-actions[bot]"
-
-  #         # Update version using cargo-release (without publishing)
-  #         cargo release $VERSION --execute --no-publish --no-tag --no-push --no-confirm
-
-  #         # Push changes
-  #         git push
+  check_version:
+    name: Check Cargo.toml version matches Git tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag_version: ${{ steps.get_version.outputs.TAG_VERSION }}
+      cargo_version: ${{ steps.get_version.outputs.CARGO_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toml-cli
+        run: cargo install toml-cli@0.2.3
+      - name: Get versions
+        id: get_version
+        run: |
+          TAG_VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          CARGO_VERSION=$(toml get Cargo.toml package.version | tr -d '"')
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "CARGO_VERSION=$CARGO_VERSION" >> $GITHUB_OUTPUT
+      - name: Verify versions match
+        run: |
+          echo "Git tag version: ${{ steps.get_version.outputs.tag_version }}"
+          echo "Cargo.toml version: ${{ steps.get_version.outputs.cargo_version }}"
+          if [ "${{ steps.get_version.outputs.tag_version }}" != "${{ steps.get_version.outputs.cargo_version }}" ]; then
+            echo "Error: Git tag version (${{ steps.get_version.outputs.tag_version }}) does not match Cargo.toml version (${{ steps.get_version.outputs.cargo_version }})."
+            echo "Please run 'scripts/cargo_release.sh' to update the cargo version before generating tag."
+            exit 1
+          fi
   build:
     name: Build multi-platform binaries
-    # needs: update_version
+    needs: check_version
     strategy:
       fail-fast: false
       matrix:
