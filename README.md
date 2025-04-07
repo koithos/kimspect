@@ -114,9 +114,9 @@ The output includes:
 
 ### Prerequisites
 
-- Rust 1.70 or later
+- Rust 1.85 or later
 - Kubernetes cluster access
-- `kubectl` configured with your cluster
+- `kubectl` installed & configured with your cluster
 
 ### Building from Source
 
