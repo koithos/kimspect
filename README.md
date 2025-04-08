@@ -119,9 +119,11 @@ This project uses `cargo-release` to automate the release process, ensuring that
 ### Prerequisites
 
 1.  Install `cargo-release`:
+
     ```bash
     cargo install cargo-release
     ```
+
 2.  Ensure your working directory is clean (all changes committed).
 3.  Make sure you are on the main branch and have pulled the latest changes.
 
