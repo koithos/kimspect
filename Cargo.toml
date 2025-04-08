@@ -14,7 +14,7 @@ rust-version = "1.85"
 clap = { version = "4.4", features = ["derive"] }
 k8s-openapi = { version = "0.20", features = ["v1_28"] }
 kube = { version = "0.87", features = ["runtime"] }
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.44", features = ["full"] }
 anyhow = "1.0"
 colored = "2.0"
 prettytable-rs = "0.10"
