@@ -1,15 +1,14 @@
 # Kelper
 
-A CLI tool to query Kubernetes pod images and their registries. Kelper helps you quickly inspect container images running in your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
+[![Crates.io Version](https://img.shields.io/crates/v/kelper)](https://crates.io/crates/kelper) [![Crates.io Downloads](https://img.shields.io/crates/d/kelper)](https://crates.io/crates/kelper) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/aliabbasjaffri/kelper)](https://github.com/aliabbasjaffri/kelper/releases/latest) [![License](https://img.shields.io/crates/l/kelper)](https://github.com/aliabbasjaffri/kelper/blob/main/LICENSE) [![CI Workflow](https://github.com/aliabbasjaffri/kelper/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/aliabbasjaffri/kelper/actions/workflows/release.yml) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![GitHub last commit](https://img.shields.io/github/last-commit/aliabbasjaffri/kelper)](https://github.com/aliabbasjaffri/kelper/commits/main)
+
+A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and nodes. Kelper helps you quickly inspect container images, labels, annotations, health metrics from probes, and many other useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
 
 ## Features
 
-- List all pod images in a namespace
-- Filter pod images by node name
-- Filter pod images by pod name
-- Display image details in a clean tabular format
-- Show image names and versions separately
-- Identify image registries
+- [x] List images in a Kubernetes cluster based on different filters, e.g., image details in a pod, namespace, or node.
+- [ ] Get labels and annotations in a pod, namespace, or node.
+- [ ] Retrieve health and metrics from pods or nodes.
 
 ## Installation
 
@@ -40,51 +39,30 @@ If you use `kubectl` and have Krew installed, you can install Kelper as a kubect
 kubectl krew install kelper
 ```
 
-After installation via Krew, you can use Kelper as a kubectl command:
-
-```bash
-kubectl kelper get images --namespace default
-```
-
 ## Usage
 
-### List Pod Images in a Namespace
-
-To list all pod images in a specific namespace:
+### Get image details with multiple filters
 
 ```bash
+### List Pod Images in a Namespace
 kelper get images --namespace default
-```
 
 ### List Pod Images on a Specific Node
-
-To list all pod images running on a specific node across all namespaces:
-
-```bash
 kelper get images -N node-name
 # or
 kelper get images --node node-name
-```
 
-Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
+
+# Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
 
 ### List Images for a Specific Pod
-
-To list images for a specific pod:
-
-```bash
 kelper get images -p pod-name
 # or
 kelper get images --pod pod-name
-```
 
-You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
-
-```bash
+# You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
 kelper get images -N node-name -p pod-name
 ```
-
-## Output Format
 
 Kelper displays information in a clean tabular format:
 
@@ -101,22 +79,13 @@ Pod Images and Registries:
 ================================================================================
 ```
 
-The output includes:
-
-- Pod Name: The name of the Kubernetes pod
-- Namespace: The Kubernetes namespace
-- Container: The container name within the pod
-- Image Name: The name of the container image
-- Version: The image version/tag
-- Registry: The container registry hosting the image
-
 ## Development
 
 ### Prerequisites
 
-- Rust 1.70 or later
+- Rust 1.85 or later
 - Kubernetes cluster access
-- `kubectl` configured with your cluster
+- `kubectl` installed & configured with your cluster
 
 ### Building from Source
 
@@ -128,31 +97,7 @@ cargo build --release
 
 ### Testing
 
-Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory and include:
-
-#### Image Processing Tests
-
-- Registry extraction from various image formats
-- Image name and version splitting
-- Handling of different registry types (Docker Hub, GCR, Quay.io, private registries)
-
-#### Pod Processing Tests
-
-- Basic pod with multiple containers
-- Pods without spec
-- Pods with empty containers
-- Containers without images
-- Complex image paths
-- Private registry images
-
-#### Test Coverage
-
-The tests cover various scenarios including:
-
-- Edge cases (missing fields, empty values)
-- Different image formats and registries
-- Error conditions
-- Data structure validation
+Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory.
 
 To run the tests:
 
@@ -167,29 +112,6 @@ cargo test -- --nocapture
 cargo test test_process_pod
 ```
 
-### Pre-commit Hooks
-
-This project uses pre-commit hooks to ensure code quality. To set them up:
-
-1. Install pre-commit:
-
-```bash
-pip install pre-commit
-```
-
-2. Install the git hooks:
-
-```bash
-pre-commit install
-```
-
-The pre-commit hooks will run automatically on every commit, checking for:
-
-- Code formatting (rustfmt)
-- Linting (clippy)
-- Security vulnerabilities (cargo-audit)
-- And more...
-
 ## Releasing
 
 This project uses `cargo-release` to automate the release process, ensuring that the version in `Cargo.toml` and the Git tag are synchronized.
@@ -197,41 +119,18 @@ This project uses `cargo-release` to automate the release process, ensuring that
 ### Prerequisites
 
 1.  Install `cargo-release`:
+
     ```bash
     cargo install cargo-release
     ```
+
 2.  Ensure your working directory is clean (all changes committed).
 3.  Make sure you are on the main branch and have pulled the latest changes.
-4.  Configure `cargo-release` to _not_ publish to crates.io, as the GitHub Actions workflow handles this.
 
 ### Steps
 
-1.  Decide on the version bump level (`patch`, `minor`, `major`) or specify an exact version.
-2.  Run the appropriate command:
-
-    ```bash
-    # For a patch release (e.g., 0.1.0 -> 0.1.1)
-    cargo release patch
-
-    # For a minor release (e.g., 0.1.1 -> 0.2.0)
-    cargo release minor
-
-    # For a major release (e.g., 0.2.0 -> 1.0.0)
-    cargo release major
-
-    # To release a specific version
-    cargo release <VERSION> # e.g., cargo release 1.2.3
-    ```
-
-3.  `cargo-release` will:
-
-    - Prompt for confirmation.
-    - Update the version in `Cargo.toml`.
-    - Commit the `Cargo.toml` and `Cargo.lock` changes.
-    - Create a Git tag (e.g., `v1.2.3`).
-    - Push the commit and the tag to the remote repository.
-
-4.  Pushing the tag will automatically trigger the `release.yml` GitHub Actions workflow, which handles building binaries, creating the GitHub Release, updating Homebrew/krew, and publishing to crates.io.
+- Run `bash scripts/cargo_release.sh <VERSION>` to update the version in the `Cargo.toml` file and create a Git tag.
+- Once that is done, push the code to main, and a release workflow will be triggered which builds multi-platform binaries and distributes them via multiple channels.
 
 ## License
 
