@@ -41,6 +41,10 @@ async fn main() -> Result<()> {
                 node,
                 pod,
             } => {
+                let show_node = node.is_none();
+                let show_namespace = node.is_some() && namespace == "default";
+                let show_pod = pod.is_none();
+
                 match client
                     .get_pod_images(&namespace, node.as_deref(), pod.as_deref())
                     .await
@@ -51,9 +55,16 @@ async fn main() -> Result<()> {
                                 "\n{}",
                                 "No pod images found matching your criteria.".yellow()
                             );
+                        } else if node.is_some() && pod.is_some() && namespace != "default" {
+                            display_pod_images(&pod_images, false, false, false);
                         } else {
+                            // Hide columns that are passed as arguments
                             let show_node = node.is_none();
-                            let show_namespace = node.is_none();
+
+                            // Only hide namespace if explicitly set to non-default
+                            let explicit_namespace_set = namespace != "default";
+                            let show_namespace = !explicit_namespace_set;
+
                             let show_pod = pod.is_none();
 
                             display_pod_images(&pod_images, show_node, show_namespace, show_pod);

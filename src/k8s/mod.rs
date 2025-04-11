@@ -281,9 +281,11 @@ pub fn display_pod_images(
     println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
-
-    // Build the header row based on which columns to show
     let mut header_cells = Vec::new();
+
+    if show_pod {
+        header_cells.push("Pod Name");
+    }
 
     if show_node {
         header_cells.push("Node");
@@ -293,13 +295,8 @@ pub fn display_pod_images(
         header_cells.push("Namespace");
     }
 
-    if show_pod {
-        header_cells.push("Pod Name");
-    }
-
     header_cells.extend(vec!["Container", "Image Name", "Version", "Registry"]);
 
-    // Create the row from our cells
     let header_row = header_cells.into_iter().collect::<Vec<_>>();
     table.add_row(prettytable::Row::new(
         header_row.into_iter().map(prettytable::Cell::new).collect(),
@@ -311,11 +308,9 @@ pub fn display_pod_images(
         if show_pod {
             row.add_cell(prettytable::Cell::new(&image.pod_name));
         }
-
         if show_node {
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
-
         if show_namespace {
             row.add_cell(prettytable::Cell::new(&image.namespace));
         }
