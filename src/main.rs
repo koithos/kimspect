@@ -41,9 +41,9 @@ async fn main() -> Result<()> {
                 node,
                 pod,
             } => {
-                let show_node = node.is_none();
-                let show_namespace = node.is_some() && namespace == "default";
-                let show_pod = pod.is_none();
+                let _show_node = node.is_none();
+                let _show_namespace = node.is_some() && namespace == "default";
+                let _show_pod = pod.is_none();
 
                 match client
                     .get_pod_images(&namespace, node.as_deref(), pod.as_deref())
