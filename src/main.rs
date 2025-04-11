@@ -53,8 +53,9 @@ async fn main() -> Result<()> {
                             );
                         } else {
                             let show_namespace = node.is_some();
+                            let show_node = node.is_none();
 
-                            display_pod_images(&pod_images, node.is_some(), show_namespace);
+                            display_pod_images(&pod_images, show_node, show_namespace);
                         }
                     }
                     Err(e) => {
