@@ -52,10 +52,11 @@ async fn main() -> Result<()> {
                                 "No pod images found matching your criteria.".yellow()
                             );
                         } else {
-                            let show_namespace = node.is_some();
                             let show_node = node.is_none();
+                            let show_namespace = node.is_none();
+                            let show_pod = pod.is_none();
 
-                            display_pod_images(&pod_images, show_node, show_namespace);
+                            display_pod_images(&pod_images, show_node, show_namespace, show_pod);
                         }
                     }
                     Err(e) => {

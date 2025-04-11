@@ -271,14 +271,19 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     pod_images
 }
 
-pub fn display_pod_images(images: &[PodImage], show_node: bool, show_namespace: bool) {
+pub fn display_pod_images(
+    images: &[PodImage],
+    show_node: bool,
+    show_namespace: bool,
+    show_pod: bool,
+) {
     println!("\n{}", "Pod Images and Registries:".green().bold());
     println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
 
     // Build the header row based on which columns to show
-    let mut header_cells = vec!["Pod Name"];
+    let mut header_cells = Vec::new();
 
     if show_node {
         header_cells.push("Node");
@@ -286,6 +291,10 @@ pub fn display_pod_images(images: &[PodImage], show_node: bool, show_namespace: 
 
     if show_namespace {
         header_cells.push("Namespace");
+    }
+
+    if show_pod {
+        header_cells.push("Pod Name");
     }
 
     header_cells.extend(vec!["Container", "Image Name", "Version", "Registry"]);
@@ -297,28 +306,24 @@ pub fn display_pod_images(images: &[PodImage], show_node: bool, show_namespace: 
     ));
 
     for image in images {
-        // Create a new row for the table
         let mut row = prettytable::Row::new(Vec::new());
 
-        // Add pod name cell
-        row.add_cell(prettytable::Cell::new(&image.pod_name));
+        if show_pod {
+            row.add_cell(prettytable::Cell::new(&image.pod_name));
+        }
 
-        // Add node cell if needed
         if show_node {
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
 
-        // Add namespace cell if needed
         if show_namespace {
             row.add_cell(prettytable::Cell::new(&image.namespace));
         }
 
-        // Add container name, image name, and version
         row.add_cell(prettytable::Cell::new(&image.container_name));
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
 
-        // Add registry with yellow color
         row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
 
         table.add_row(row);
