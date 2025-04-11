@@ -75,7 +75,7 @@ jobs:
             target/${{ matrix.platform.target }}/release/*.tar.gz
 
   release:
-    name: Create Release, Publish Crate, and Update Homebrew
+    name: Create Release, Publish Crate, and Update Homebrew & Krew
     runs-on: ubuntu-latest
     # needs: [update_version, build]
     needs: build
