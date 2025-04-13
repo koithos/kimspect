@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use colored::*;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{Api, Client};
-use prettytable::{row, Table};
+use prettytable::Table;
 
 #[derive(Debug)]
 pub struct PodImage {
@@ -271,54 +271,56 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     pod_images
 }
 
-pub fn display_pod_images(images: &[PodImage], show_node: bool) {
+pub fn display_pod_images(
+    images: &[PodImage],
+    show_node: bool,
+    show_namespace: bool,
+    show_pod: bool,
+) {
     println!("\n{}", "Pod Images and Registries:".green().bold());
     println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
-    let headers = if show_node {
-        row![
-            "Pod Name",
-            "Node",
-            "Namespace",
-            "Container",
-            "Image Name",
-            "Version",
-            "Registry"
-        ]
-    } else {
-        row![
-            "Pod Name",
-            "Namespace",
-            "Container",
-            "Image Name",
-            "Version",
-            "Registry"
-        ]
-    };
-    table.add_row(headers);
+    let mut header_cells = Vec::new();
+
+    if show_pod {
+        header_cells.push("Pod Name");
+    }
+
+    if show_node {
+        header_cells.push("Node");
+    }
+
+    if show_namespace {
+        header_cells.push("Namespace");
+    }
+
+    header_cells.extend(vec!["Container", "Image Name", "Version", "Registry"]);
+
+    let header_row = header_cells.into_iter().collect::<Vec<_>>();
+    table.add_row(prettytable::Row::new(
+        header_row.into_iter().map(prettytable::Cell::new).collect(),
+    ));
 
     for image in images {
-        let row = if show_node {
-            row![
-                image.pod_name,
-                image.node_name.as_str(),
-                image.namespace,
-                image.container_name,
-                image.image_name,
-                image.image_version,
-                image.registry.yellow()
-            ]
-        } else {
-            row![
-                image.pod_name,
-                image.namespace,
-                image.container_name,
-                image.image_name,
-                image.image_version,
-                image.registry.yellow()
-            ]
-        };
+        let mut row = prettytable::Row::new(Vec::new());
+
+        if show_pod {
+            row.add_cell(prettytable::Cell::new(&image.pod_name));
+        }
+        if show_node {
+            row.add_cell(prettytable::Cell::new(&image.node_name));
+        }
+        if show_namespace {
+            row.add_cell(prettytable::Cell::new(&image.namespace));
+        }
+
+        row.add_cell(prettytable::Cell::new(&image.container_name));
+        row.add_cell(prettytable::Cell::new(&image.image_name));
+        row.add_cell(prettytable::Cell::new(&image.image_version));
+
+        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+
         table.add_row(row);
     }
 
