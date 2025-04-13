@@ -62,6 +62,9 @@ kelper get images --pod pod-name
 
 # You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
 kelper get images -N node-name -p pod-name
+
+# You can also use the `--all-namespaces` flag to list images from all namespaces:
+kelper get images --all-namespaces
 ```
 
 Kelper displays information in a clean tabular format:
