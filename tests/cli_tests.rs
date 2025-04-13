@@ -80,16 +80,9 @@ fn test_cli_parse_get_images_all_namespaces_short() {
 }
 
 #[test]
-fn test_cli_parse_get_images_node_and_all_namespaces() {
+fn test_cli_parse_get_images_node() {
     // Test combining node filter with all-namespaces
-    let args = Args::parse_from([
-        "kelper",
-        "get",
-        "images",
-        "--node",
-        "worker1",
-        "--all-namespaces",
-    ]);
+    let args = Args::parse_from(["kelper", "get", "images", "--node", "worker1"]);
 
     let Commands::Get { resource } = args.command;
 
@@ -103,7 +96,7 @@ fn test_cli_parse_get_images_node_and_all_namespaces() {
     assert_eq!(namespace, "default");
     assert_eq!(node, Some("worker1".to_string()));
     assert!(pod.is_none());
-    assert!(all_namespaces);
+    assert!(!all_namespaces);
 }
 
 #[test]

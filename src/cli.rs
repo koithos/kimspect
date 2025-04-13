@@ -21,10 +21,15 @@ pub enum GetResource {
     /// List pod images and their registries
     Images {
         /// Kubernetes namespace to query (defaults to "default", ignored when --node is specified)
-        #[arg(short, long, default_value = "default")]
+        #[arg(
+            short,
+            long,
+            default_value = "default",
+            conflicts_with = "all_namespaces"
+        )]
         namespace: String,
 
-        #[arg(short = 'N', long = "node")]
+        #[arg(short = 'N', long = "node", conflicts_with = "all_namespaces")]
         node: Option<String>,
 
         #[arg(short, long)]
