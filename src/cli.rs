@@ -23,11 +23,14 @@ pub enum GetResource {
         /// Kubernetes namespace to query (defaults to "default", ignored when --node is specified)
         #[arg(short, long, default_value = "default")]
         namespace: String,
-        /// Node name to filter pods (optional)
+
         #[arg(short = 'N', long = "node")]
         node: Option<String>,
-        /// Pod name to filter images (optional)
+
         #[arg(short, long)]
         pod: Option<String>,
+
+        #[arg(short = 'A', long = "all-namespaces", conflicts_with = "namespace")]
+        all_namespaces: bool,
     },
 }

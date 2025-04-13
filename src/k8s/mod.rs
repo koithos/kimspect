@@ -87,10 +87,13 @@ impl K8sClient {
         namespace: &str,
         node_name: Option<&str>,
         pod_name: Option<&str>,
+        all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
-        let pods: Api<Pod> = if node_name.is_some() {
+        let pods: Api<Pod> = if node_name.is_some() || all_namespaces {
+            // For node filters or all-namespaces, query across all namespaces
             Api::all(self.client.clone())
         } else {
+            // Otherwise, use the specified namespace
             Api::namespaced(self.client.clone(), namespace)
         };
 
@@ -114,6 +117,16 @@ impl K8sClient {
             if let Some(name) = pod_name {
                 if let Some(pod_name) = &pod.metadata.name {
                     if pod_name != name {
+                        continue;
+                    }
+                }
+            }
+
+            // If we're not in all-namespaces mode and not filtering by node,
+            // check if this pod is in the requested namespace
+            if !all_namespaces && node_name.is_none() {
+                if let Some(pod_namespace) = &pod.metadata.namespace {
+                    if pod_namespace != namespace {
                         continue;
                     }
                 }
