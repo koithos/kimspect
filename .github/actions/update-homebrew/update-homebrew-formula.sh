@@ -8,6 +8,9 @@ ARM64_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/${A
 echo "Cloning tap repository $TAP_REPO..."
 # Use the passed TAP_TOKEN for authentication
 git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" "$TAP_DIR"
+# Checkout main
+git checkout main
+
 cd "$TAP_DIR"
 
 echo "Updating formula $FORMULA_PATH for version $RELEASE_TAG..."
@@ -20,12 +23,10 @@ sed -i.bak "s#{{arm64_url}}#${ARM64_URL}#g" "$FORMULA_PATH"
 sed -i.bak "s#{{arm64_sha256}}#${ARM64_SHA}#g" "$FORMULA_PATH"
 rm "${FORMULA_PATH}.bak" # Remove backup files created by sed -i
 
-# Checkout main
-git checkout main
-
 echo "Committing and pushing changes..."
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
+git status
 git add "$FORMULA_PATH"
 
 if git diff --staged --quiet; then
