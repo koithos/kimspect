@@ -2,17 +2,17 @@
 class Kelper < Formula
   desc "A CLI tool for Kelper"
   homepage "https://github.com/aliabbasjaffri/kelper"
-  version "{{version}}"
+  version "${version}"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "{{amd64_url}}"
-      sha256 "{{amd64_sha256}}"
+      url "${amd64_url}"
+      sha256 "${amd64_sha256}"
     end
     if Hardware::CPU.arm?
-      url "{{arm64_url}}"
-      sha256 "{{arm64_sha256}}"
+      url "${arm64_url}"
+      sha256 "${arm64_sha256}"
     end
   end
 
