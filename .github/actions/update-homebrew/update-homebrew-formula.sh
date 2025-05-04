@@ -7,9 +7,7 @@ ARM64_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/${A
 
 echo "Cloning tap repository $TAP_REPO..."
 # Use the passed TAP_TOKEN for authentication
-git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" "$TAP_DIR"
-# Checkout main
-git checkout main
+git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" --branch main "$TAP_DIR"
 
 cd "$TAP_DIR"
 
