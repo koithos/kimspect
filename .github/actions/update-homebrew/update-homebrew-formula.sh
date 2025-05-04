@@ -11,15 +11,29 @@ git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" --bra
 
 cd "$TAP_DIR"
 
-echo "Updating formula $FORMULA_PATH for version $RELEASE_TAG..."
+echo "Generating formula $FORMULA_PATH from template for version $RELEASE_TAG..."
 
-# Use '#' as delimiter for sed to avoid conflicts with '/' in URLs
-sed -i.bak "s#{{version}}#${RELEASE_TAG}#g" "$FORMULA_PATH"
-sed -i.bak "s#{{amd64_url}}#${AMD64_URL}#g" "$FORMULA_PATH"
-sed -i.bak "s#{{amd64_sha256}}#${AMD64_SHA}#g" "$FORMULA_PATH"
-sed -i.bak "s#{{arm64_url}}#${ARM64_URL}#g" "$FORMULA_PATH"
-sed -i.bak "s#{{arm64_sha256}}#${ARM64_SHA}#g" "$FORMULA_PATH"
-rm "${FORMULA_PATH}.bak" # Remove backup files created by sed -i
+# Export variables for envsubst with names matching the template placeholders
+export version="$RELEASE_TAG"
+export amd64_url="$AMD64_URL"
+export amd64_sha256="$AMD64_SHA"
+export arm64_url="$ARM64_URL"
+export arm64_sha256="$ARM64_SHA"
+
+# Check if template file exists
+if [ ! -f "$TEMPLATE_FILE_PATH" ]; then
+    echo "Error: Template file not found at $TEMPLATE_FILE_PATH"
+    exit 1
+fi
+
+# Use envsubst to substitute variables in the template and output to the formula path
+# Specify the variables to substitute explicitly
+envsubst '${version} ${amd64_url} ${amd64_sha256} ${arm64_url} ${arm64_sha256}' < "$TEMPLATE_FILE_PATH" > "$FORMULA_PATH"
+
+echo "Formula file $FORMULA_PATH generated."
+
+# Unset exported variables
+unset version amd64_url amd64_sha256 arm64_url arm64_sha256
 
 echo "Committing and pushing changes..."
 git config user.name "github-actions[bot]"
@@ -28,7 +42,9 @@ git status
 git add "$FORMULA_PATH"
 
 if git diff --staged --quiet; then
-  echo "No changes to the formula file. Skipping commit."
+  echo "No changes detected in the formula file $FORMULA_PATH after generation. Exiting."
+  # Exit cleanly if no changes are detected
+  exit 0
 else
   git commit -m "$COMMIT_MESSAGE"
   git push
