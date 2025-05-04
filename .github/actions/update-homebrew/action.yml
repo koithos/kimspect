@@ -56,7 +56,6 @@ runs:
         FORMULA_PATH: "${{ inputs.formula_path }}"
         RELEASE_TAG: "${{ inputs.release_tag }}"
         REPOSITORY: "${{ inputs.repository }}"
-        TEMPLATE_FILE_PATH: ${GITHUB_ACTION_PATH}/kelper.rb.tpl
         AMD64_SHA: "${{ steps.shas.outputs.amd64_sha256 }}"
         ARM64_SHA: "${{ steps.shas.outputs.arm64_sha256 }}"
         AMD64_NAME: "${{ inputs.amd64_artifact_name }}"
