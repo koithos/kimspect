@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use colored::*;
 use k8s_openapi::api::core::v1::Pod;
-use kube::{Api, Client};
+use kube::{api::ListParams, Api, Client};
 use prettytable::Table;
 
 #[derive(Debug)]
@@ -89,46 +89,44 @@ impl K8sClient {
         pod_name: Option<&str>,
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
-        let pods: Api<Pod> = if node_name.is_some() || all_namespaces {
-            // For node filters or all-namespaces, query across all namespaces
+        let mut field_selectors = String::new();
+
+        if let Some(node) = node_name {
+            field_selectors.push_str(&format!("spec.nodeName={}", node));
+        }
+
+        if let Some(name) = pod_name {
+            if !field_selectors.is_empty() {
+                field_selectors.push(',');
+            }
+            field_selectors.push_str(&format!("metadata.name={}", name));
+        }
+
+        let list_params = if !field_selectors.is_empty() {
+            ListParams::default().fields(&field_selectors)
+        } else {
+            ListParams::default()
+        };
+
+        let pods: Api<Pod> = if all_namespaces || node_name.is_some() {
             Api::all(self.client.clone())
         } else {
-            // Otherwise, use the specified namespace
             Api::namespaced(self.client.clone(), namespace)
         };
 
-        let pods_list = pods
-            .list(&Default::default())
-            .await
-            .context("Failed to list pods")?;
+        let pods_list = pods.list(&list_params).await.context(format!(
+            "Failed to list pods in namespace '{}' with field selectors '{}' and params: {:?}",
+            namespace, field_selectors, list_params
+        ))?;
 
         let mut all_images = Vec::new();
         for pod in pods_list {
-            // Filter by node if specified
-            if let Some(node) = node_name {
-                if let Some(pod_node) = pod.spec.as_ref().and_then(|s| s.node_name.as_deref()) {
-                    if pod_node != node {
-                        continue;
-                    }
-                }
-            }
-
-            // Filter by pod name if specified
-            if let Some(name) = pod_name {
-                if let Some(pod_name) = &pod.metadata.name {
-                    if pod_name != name {
-                        continue;
-                    }
-                }
-            }
-
-            // If we're not in all-namespaces mode and not filtering by node,
-            // check if this pod is in the requested namespace
-            if !all_namespaces && node_name.is_none() {
-                if let Some(pod_namespace) = &pod.metadata.namespace {
-                    if pod_namespace != namespace {
-                        continue;
-                    }
+            // Perform client-side filtering for pod name when querying cluster-wide.
+            if let (true, Some(name_filter)) = ((all_namespaces || node_name.is_some()), pod_name) {
+                match &pod.metadata.name {
+                    Some(p_name) if p_name != name_filter => continue,
+                    None => continue, // Skip pods without names if filtering by name
+                    _ => {}
                 }
             }
 
