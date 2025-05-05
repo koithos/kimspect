@@ -167,60 +167,68 @@ impl K8sClient {
             list_params
         ))?;
 
-        let filtered_pods: Vec<Pod> = pods_list
-            .into_iter()
-            .filter(|pod| {
-                // Apply node filter
-                if node_name.is_some()
-                    && pod.spec.as_ref().and_then(|s| s.node_name.as_deref()) != node_name
-                {
-                    return false;
+        // Perform client-side filtering for registry
+        let filtered_pods: Vec<Pod> =
+            filter_pods_by_registry_criteria(&pods_list.items, registry_filter);
+
+        // Apply client-side node name filtering *after* registry filtering if node_name was specified.
+        let filtered_pods: Vec<Pod> = if let Some(node) = node_name {
+            filtered_pods
+                .into_iter()
+                .filter(|pod| pod.spec.as_ref().and_then(|s| s.node_name.as_deref()) == Some(node))
+                .collect()
+        } else {
+            filtered_pods
+        };
+
+        Ok(filtered_pods)
+    }
+}
+
+pub fn filter_pods_by_registry_criteria(pods: &[Pod], registry_filter: Option<&str>) -> Vec<Pod> {
+    if registry_filter.is_none() {
+        // No filter needed, return all pods cloned
+        return pods.to_vec();
+    }
+
+    let reg_filter = registry_filter.unwrap(); // Safe unwrap due to check above
+
+    pods.iter()
+        .filter(|pod| {
+            let pod_spec = match pod.spec.as_ref() {
+                Some(spec) => spec,
+                None => return false, // Skip pods without spec
+            };
+
+            let mut found_match = false;
+
+            // Check standard containers
+            for container in &pod_spec.containers {
+                if let Some(image) = &container.image {
+                    if extract_registry(image) == reg_filter {
+                        found_match = true;
+                        break;
+                    }
                 }
+            }
 
-                // Apply registry filter
-                if let Some(reg_filter) = registry_filter {
-                    let pod_spec: &PodSpec = match pod.spec.as_ref() {
-                        Some(spec) => spec,
-                        None => return false, // Skip pods without spec
-                    };
-
-                    let mut found_match = false;
-
-                    // Check standard containers (pod_spec.containers is Vec<Container>)
-                    for container in &pod_spec.containers {
-                        // Iterate directly
+            // Check init containers if no match found yet
+            if !found_match {
+                if let Some(init_containers) = &pod_spec.init_containers {
+                    for container in init_containers {
                         if let Some(image) = &container.image {
-                            // Use `&container.image` pattern
                             if extract_registry(image) == reg_filter {
                                 found_match = true;
                                 break;
                             }
                         }
                     }
-
-                    // Check init containers if no match found yet (pod_spec.init_containers is Option<Vec<Container>>)
-                    // NOTE: init_containers *IS* optional according to PodSpec docs.
-                    if !found_match {
-                        if let Some(init_containers) = &pod_spec.init_containers {
-                            for container in init_containers {
-                                if let Some(image) = &container.image {
-                                    if extract_registry(image) == reg_filter {
-                                        found_match = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    found_match
-                } else {
-                    true // No registry filter, keep the pod
                 }
-            })
-            .collect();
-
-        Ok(filtered_pods)
-    }
+            }
+            found_match
+        })
+        .cloned() // Clone the pods that match the filter
+        .collect()
 }
 
 pub fn extract_registry(image: &str) -> String {
