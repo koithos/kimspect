@@ -19,7 +19,6 @@ repos:
         args:
           - --all
           - --
-          - --check
           - --color
           - always
       - id: cargo-check
