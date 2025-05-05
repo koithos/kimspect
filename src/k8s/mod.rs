@@ -89,37 +89,34 @@ impl K8sClient {
         pod_name: Option<&str>,
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
-        let mut list_params = ListParams::default();
-        let mut field_selectors = Vec::new();
+        let mut field_selectors = String::new();
 
-        // Add field selector for node name if specified
         if let Some(node) = node_name {
-            field_selectors.push(format!("spec.nodeName={}", node));
+            field_selectors.push_str(&format!("spec.nodeName={}", node));
         }
 
-        // Determine the API scope (namespaced or all)
+        if let Some(name) = pod_name {
+            if !field_selectors.is_empty() {
+                field_selectors.push(',');
+            }
+            field_selectors.push_str(&format!("metadata.name={}", name));
+        }
+
+        let list_params = if !field_selectors.is_empty() {
+            ListParams::default().fields(&field_selectors)
+        } else {
+            ListParams::default()
+        };
+
         let pods: Api<Pod> = if all_namespaces || node_name.is_some() {
-            // Query across all namespaces if --all-namespaces or --node is specified
             Api::all(self.client.clone())
         } else {
-            // Otherwise, use the specified namespace
-            // Add field selector for pod name *only* when querying a specific namespace
-            if let Some(name) = pod_name {
-                // metadata.name is unique within a namespace
-                field_selectors.push(format!("metadata.name={}", name));
-            }
             Api::namespaced(self.client.clone(), namespace)
         };
 
-        // Apply combined field selectors
-        if !field_selectors.is_empty() {
-            list_params = list_params.fields(&field_selectors.join(","));
-        }
-
-        // Fetch pods using the configured ListParams
         let pods_list = pods.list(&list_params).await.context(format!(
-            "Failed to list pods with params: {:?}",
-            list_params
+            "Failed to list pods in namespace '{}' with params: {:?}",
+            namespace, list_params
         ))?;
 
         let mut all_images = Vec::new();
