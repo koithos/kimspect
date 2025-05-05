@@ -115,8 +115,8 @@ impl K8sClient {
         };
 
         let pods_list = pods.list(&list_params).await.context(format!(
-            "Failed to list pods in namespace '{}' with params: {:?}",
-            namespace, list_params
+            "Failed to list pods in namespace '{}' with field selectors '{}' and params: {:?}",
+            namespace, field_selectors, list_params
         ))?;
 
         let mut all_images = Vec::new();
