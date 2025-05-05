@@ -121,18 +121,12 @@ impl K8sClient {
 
         let mut all_images = Vec::new();
         for pod in pods_list {
-            // Client-side filtering for pod name is only needed when querying all namespaces
-            // because metadata.name field selector doesn't work cluster-wide reliably
-            // or when node_name filter was the primary cluster-wide filter.
-            if (all_namespaces || node_name.is_some()) && pod_name.is_some() {
-                if let Some(name_filter) = pod_name {
-                    if let Some(p_name) = &pod.metadata.name {
-                        if p_name != name_filter {
-                            continue; // Skip pod if name doesn't match when filtering cluster-wide
-                        }
-                    } else {
-                        continue; // Skip pods without names if filtering by name
-                    }
+            // Perform client-side filtering for pod name when querying cluster-wide.
+            if let (true, Some(name_filter)) = ((all_namespaces || node_name.is_some()), pod_name) {
+                match &pod.metadata.name {
+                    Some(p_name) if p_name != name_filter => continue,
+                    None => continue, // Skip pods without names if filtering by name
+                    _ => {}
                 }
             }
 
