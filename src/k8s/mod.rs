@@ -382,6 +382,10 @@ pub fn display_pod_images(
     show_namespace: bool,
     show_pod: bool,
 ) {
+    if images.is_empty() {
+        println!("{}", "No images found matching criteria.".yellow());
+        return;
+    }
     println!("\n{}", "Pod Images and Registries:".green().bold());
     println!("{}", "=".repeat(80));
 
@@ -389,18 +393,18 @@ pub fn display_pod_images(
     let mut header_cells = Vec::new();
 
     if show_pod {
-        header_cells.push("Pod Name");
+        header_cells.push("POD NAME");
     }
 
     if show_node {
-        header_cells.push("Node");
+        header_cells.push("NODE");
     }
 
     if show_namespace {
-        header_cells.push("Namespace");
+        header_cells.push("NAMESPACE");
     }
 
-    header_cells.extend(vec!["Container", "Image Name", "Version", "Registry"]);
+    header_cells.extend(vec!["CONTAINER", "IMAGE NAME", "VERSION", "REGISTRY"]);
 
     let header_row = header_cells.into_iter().collect::<Vec<_>>();
     table.add_row(prettytable::Row::new(
