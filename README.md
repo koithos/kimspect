@@ -65,18 +65,14 @@ kelper get images -N node-name -p pod-name
 
 # You can also use the `--all-namespaces` flag to list images from all namespaces:
 kelper get images --all-namespaces
-```
 
-### Get pods using image from a given registry
+### List images with a specific registry
+kelper get images --registry "docker.io" --namespace kube-system
 
-```bash
-### List pods with a specific registry
-kelper get pods --registry "docker.io" --namespace kube-system
-
-### List pods with a specific registry in a Node
+### List images with a specific registry in a Node
 kelper get pods --registry "quay.io" --node node-name
 
-### List all pods with a specific registry
+### List all images with a specific registry
 kelper get pods --registry "quay.io" --all-namespaces
 ```
 
