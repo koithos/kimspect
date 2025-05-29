@@ -88,6 +88,7 @@ impl K8sClient {
         namespace: &str,
         node_name: Option<&str>,
         pod_name: Option<&str>,
+        registry_filter: Option<&str>,
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
         let mut field_selectors = String::new();
@@ -381,6 +382,7 @@ pub fn display_pod_images(
     show_node: bool,
     show_namespace: bool,
     show_pod: bool,
+    show_registry: bool,
 ) {
     if images.is_empty() {
         println!("{}", "No images found matching criteria.".yellow());
@@ -428,7 +430,9 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
 
-        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        if show_registry {
+            row.add_cell(prettytable::Cell::new(&image.registry));
+        }
 
         table.add_row(row);
     }

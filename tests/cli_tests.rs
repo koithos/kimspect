@@ -10,15 +10,15 @@ fn test_cli_parse_get_images_default() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
         assert_eq!(namespace, "default");
         assert!(node.is_none());
         assert!(pod.is_none());
+        assert!(registry.is_none());
         assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -30,15 +30,15 @@ fn test_cli_parse_get_images_namespace() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
         assert_eq!(namespace, "test-ns");
         assert!(node.is_none());
         assert!(pod.is_none());
+        assert!(registry.is_none());
         assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -50,6 +50,7 @@ fn test_cli_parse_get_images_all_namespaces() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
@@ -57,9 +58,8 @@ fn test_cli_parse_get_images_all_namespaces() {
         assert_eq!(namespace, "default");
         assert!(node.is_none());
         assert!(pod.is_none());
+        assert!(registry.is_none());
         assert!(all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -72,15 +72,15 @@ fn test_cli_parse_get_images_all_namespaces_short() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
         assert_eq!(namespace, "default");
         assert!(node.is_none());
         assert!(pod.is_none());
+        assert!(registry.is_none());
         assert!(all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -93,15 +93,15 @@ fn test_cli_parse_get_images_node() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
         assert_eq!(namespace, "default");
         assert_eq!(node, Some("worker1".to_string()));
         assert!(pod.is_none());
+        assert!(registry.is_none());
         assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -121,15 +121,15 @@ fn test_cli_parse_get_images_pod_and_all_namespaces() {
         namespace,
         node,
         pod,
+        registry,
         all_namespaces,
     } = resource
     {
         assert_eq!(namespace, "default");
         assert!(node.is_none());
         assert_eq!(pod, Some("nginx-pod".to_string()));
+        assert!(registry.is_none());
         assert!(all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Pods when expecting GetResource::Images");
     }
 }
 
@@ -149,157 +149,6 @@ fn test_cli_parse_get_images_namespace_and_all_namespaces_conflict() {
         result.is_err(),
         "Expected parser to reject conflicting arguments for 'get images'"
     );
-}
-
-// --- Tests for 'get pods' ---
-
-#[test]
-fn test_cli_parse_get_pods_default() {
-    let args = Args::parse_from(["kelper", "get", "pods"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default");
-        assert!(node.is_none());
-        assert!(registry.is_none());
-        assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_namespace() {
-    let args = Args::parse_from(["kelper", "get", "pods", "-n", "kube-system"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "kube-system");
-        assert!(node.is_none());
-        assert!(registry.is_none());
-        assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_node() {
-    let args = Args::parse_from(["kelper", "get", "pods", "-N", "node-1"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default");
-        assert_eq!(node, Some("node-1".to_string()));
-        assert!(registry.is_none());
-        assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_registry() {
-    let args = Args::parse_from(["kelper", "get", "pods", "-R", "quay.io"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default");
-        assert!(node.is_none());
-        assert_eq!(registry, Some("quay.io".to_string()));
-        assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_all_namespaces() {
-    let args = Args::parse_from(["kelper", "get", "pods", "-A"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default"); // Default namespace is retained but ignored in logic
-        assert!(node.is_none());
-        assert!(registry.is_none());
-        assert!(all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_node_and_registry() {
-    let args = Args::parse_from(["kelper", "get", "pods", "-N", "node-2", "-R", "ghcr.io"]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default");
-        assert_eq!(node, Some("node-2".to_string()));
-        assert_eq!(registry, Some("ghcr.io".to_string()));
-        assert!(!all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
-}
-
-#[test]
-fn test_cli_parse_get_pods_all_namespaces_node_and_registry() {
-    let args = Args::parse_from([
-        "kelper",
-        "get",
-        "pods",
-        "-A",
-        "-N",
-        "node-3",
-        "-R",
-        "docker.io",
-    ]);
-    let Commands::Get { resource } = args.command;
-    if let GetResource::Pods {
-        namespace,
-        node,
-        registry,
-        all_namespaces,
-    } = resource
-    {
-        assert_eq!(namespace, "default");
-        assert_eq!(node, Some("node-3".to_string()));
-        assert_eq!(registry, Some("docker.io".to_string()));
-        assert!(all_namespaces);
-    } else {
-        panic!("Parsed GetResource::Images when expecting GetResource::Pods");
-    }
 }
 
 #[test]
