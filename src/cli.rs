@@ -35,6 +35,10 @@ pub enum GetResource {
         #[arg(short, long)]
         pod: Option<String>,
 
+        /// Filter pods by container image registry
+        #[arg(short = 'R', long = "registry")]
+        registry: Option<String>,
+
         #[arg(short = 'A', long = "all-namespaces", conflicts_with = "namespace")]
         all_namespaces: bool,
     },

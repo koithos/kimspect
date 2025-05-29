@@ -271,3 +271,89 @@ fn test_process_pod_with_multiple_registries() {
     assert_eq!(images[2].registry, "quay.io");
     assert_eq!(images[3].registry, "my-registry:5000");
 }
+
+#[test]
+fn test_registry_filtering() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![
+            create_test_container("nginx", "docker.io/nginx:latest"),
+            create_test_container("redis", "gcr.io/google-containers/redis:6.2"),
+            create_test_container("etcd", "quay.io/coreos/etcd:v3.3.0"),
+            create_test_container("api", "my-registry:5000/api:v1.0"),
+        ],
+    );
+
+    let images = process_pod(&pod);
+
+    // Test filtering for docker.io registry
+    let docker_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "docker.io")
+        .collect();
+    assert_eq!(docker_images.len(), 1);
+    assert_eq!(docker_images[0].container_name, "nginx");
+    assert_eq!(docker_images[0].image_name, "docker.io/nginx");
+
+    // Test filtering for gcr.io registry
+    let gcr_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "gcr.io")
+        .collect();
+    assert_eq!(gcr_images.len(), 1);
+    assert_eq!(gcr_images[0].container_name, "redis");
+    assert_eq!(gcr_images[0].image_name, "gcr.io/google-containers/redis");
+
+    // Test filtering for quay.io registry
+    let quay_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "quay.io")
+        .collect();
+    assert_eq!(quay_images.len(), 1);
+    assert_eq!(quay_images[0].container_name, "etcd");
+    assert_eq!(quay_images[0].image_name, "quay.io/coreos/etcd");
+
+    // Test filtering for private registry
+    let private_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "my-registry:5000")
+        .collect();
+    assert_eq!(private_images.len(), 1);
+    assert_eq!(private_images[0].container_name, "api");
+    assert_eq!(private_images[0].image_name, "my-registry:5000/api");
+}
+
+#[test]
+fn test_registry_filtering_with_no_matches() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![
+            create_test_container("nginx", "docker.io/nginx:latest"),
+            create_test_container("redis", "gcr.io/google-containers/redis:6.2"),
+        ],
+    );
+
+    let images = process_pod(&pod);
+
+    // Test filtering for non-existent registry
+    let non_existent_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "non-existent-registry")
+        .collect();
+    assert_eq!(non_existent_images.len(), 0);
+}
+
+#[test]
+fn test_registry_filtering_with_empty_pod() {
+    let pod = create_test_pod("test-pod", "default", vec![]);
+    let images = process_pod(&pod);
+
+    // Test filtering on empty pod
+    let filtered_images: Vec<_> = images
+        .iter()
+        .filter(|img| img.registry == "docker.io")
+        .collect();
+    assert_eq!(filtered_images.len(), 0);
+}

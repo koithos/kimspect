@@ -1,8 +1,7 @@
+use crate::utils::KNOWN_REGISTRIES;
 use anyhow::{Context, Result};
-use colored::*;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
-use prettytable::Table;
 
 #[derive(Debug)]
 pub struct PodImage {
@@ -87,6 +86,7 @@ impl K8sClient {
         namespace: &str,
         node_name: Option<&str>,
         pod_name: Option<&str>,
+        registry_filter: Option<&str>,
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
         let mut field_selectors = String::new();
@@ -133,6 +133,10 @@ impl K8sClient {
             all_images.extend(process_pod(&pod));
         }
 
+        if let Some(registry_filter) = registry_filter {
+            all_images.retain(|image| image.registry == registry_filter);
+        }
+
         Ok(all_images)
     }
 }
@@ -174,19 +178,7 @@ pub fn extract_registry(image: &str) -> String {
     }
 
     // Check for known public registries
-    let known_registries = [
-        "docker.io",
-        "registry.hub.docker.com",
-        "ghcr.io",
-        "gcr.io",
-        "quay.io",
-        "registry.gitlab.com",
-        "mcr.microsoft.com",
-        "registry.k8s.io",
-        "public.ecr.aws",
-        "docker.pkg.github.com",
-        "pkg.dev",
-    ];
+    let known_registries = KNOWN_REGISTRIES;
 
     for registry in &known_registries {
         if potential_registry == *registry || potential_registry.ends_with(*registry) {
@@ -280,61 +272,4 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     }
 
     pod_images
-}
-
-pub fn display_pod_images(
-    images: &[PodImage],
-    show_node: bool,
-    show_namespace: bool,
-    show_pod: bool,
-) {
-    println!("\n{}", "Pod Images and Registries:".green().bold());
-    println!("{}", "=".repeat(80));
-
-    let mut table = Table::new();
-    let mut header_cells = Vec::new();
-
-    if show_pod {
-        header_cells.push("Pod Name");
-    }
-
-    if show_node {
-        header_cells.push("Node");
-    }
-
-    if show_namespace {
-        header_cells.push("Namespace");
-    }
-
-    header_cells.extend(vec!["Container", "Image Name", "Version", "Registry"]);
-
-    let header_row = header_cells.into_iter().collect::<Vec<_>>();
-    table.add_row(prettytable::Row::new(
-        header_row.into_iter().map(prettytable::Cell::new).collect(),
-    ));
-
-    for image in images {
-        let mut row = prettytable::Row::new(Vec::new());
-
-        if show_pod {
-            row.add_cell(prettytable::Cell::new(&image.pod_name));
-        }
-        if show_node {
-            row.add_cell(prettytable::Cell::new(&image.node_name));
-        }
-        if show_namespace {
-            row.add_cell(prettytable::Cell::new(&image.namespace));
-        }
-
-        row.add_cell(prettytable::Cell::new(&image.container_name));
-        row.add_cell(prettytable::Cell::new(&image.image_name));
-        row.add_cell(prettytable::Cell::new(&image.image_version));
-
-        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
-
-        table.add_row(row);
-    }
-
-    table.printstd();
-    println!("\n{}", "=".repeat(80));
 }

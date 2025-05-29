@@ -2,7 +2,8 @@ use anyhow::Result;
 use colored::*;
 use kelper::{
     cli::{Args, Commands, GetResource},
-    k8s::{display_pod_images, K8sClient},
+    k8s::K8sClient,
+    utils::display_pod_images,
 };
 
 #[tokio::main]
@@ -40,10 +41,17 @@ async fn main() -> Result<()> {
                 namespace,
                 node,
                 pod,
+                registry,
                 all_namespaces,
             } => {
                 match client
-                    .get_pod_images(&namespace, node.as_deref(), pod.as_deref(), all_namespaces)
+                    .get_pod_images(
+                        &namespace,
+                        node.as_deref(),
+                        pod.as_deref(),
+                        registry.as_deref(),
+                        all_namespaces,
+                    )
                     .await
                 {
                     Ok(pod_images) => {
