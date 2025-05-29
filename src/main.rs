@@ -69,15 +69,7 @@ async fn main() -> Result<()> {
 
                             let show_pod = pod.is_none();
 
-                            let show_registry = registry.is_some();
-
-                            display_pod_images(
-                                &pod_images,
-                                show_node,
-                                show_namespace,
-                                show_pod,
-                                show_registry,
-                            );
+                            display_pod_images(&pod_images, show_node, show_namespace, show_pod);
                         }
                     }
                     Err(e) => {

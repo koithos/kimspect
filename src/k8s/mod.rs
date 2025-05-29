@@ -134,11 +134,9 @@ impl K8sClient {
             all_images.extend(process_pod(&pod));
         }
 
-        println!("all_images: {:?}", all_images);
-
-        // if let Some(registry_filter) = registry_filter {
-        //     all_images = all_images.into_iter().filter(|image| image.registry == registry_filter).collect();
-        // }
+        if let Some(registry_filter) = registry_filter {
+            all_images.retain(|image| image.registry == registry_filter);
+        }
 
         Ok(all_images)
     }
@@ -294,7 +292,6 @@ pub fn display_pod_images(
     show_node: bool,
     show_namespace: bool,
     show_pod: bool,
-    show_registry: bool,
 ) {
     if images.is_empty() {
         println!("{}", "No images found matching criteria.".yellow());
@@ -341,10 +338,7 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.container_name));
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
-
-        if show_registry {
-            row.add_cell(prettytable::Cell::new(&image.registry));
-        }
+        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
 
         table.add_row(row);
     }
