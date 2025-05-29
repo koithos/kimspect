@@ -2,6 +2,20 @@ use crate::k8s::PodImage;
 use colored::*;
 use prettytable::Table;
 
+pub const KNOWN_REGISTRIES: [&str; 11] = [
+    "docker.io",
+    "registry.hub.docker.com",
+    "ghcr.io",
+    "gcr.io",
+    "quay.io",
+    "registry.gitlab.com",
+    "mcr.microsoft.com",
+    "registry.k8s.io",
+    "public.ecr.aws",
+    "docker.pkg.github.com",
+    "pkg.dev",
+];
+
 pub fn display_pod_images(
     images: &[PodImage],
     show_node: bool,

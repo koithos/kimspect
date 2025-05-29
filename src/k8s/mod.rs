@@ -1,3 +1,4 @@
+use crate::utils::KNOWN_REGISTRIES;
 use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
@@ -177,19 +178,7 @@ pub fn extract_registry(image: &str) -> String {
     }
 
     // Check for known public registries
-    let known_registries = [
-        "docker.io",
-        "registry.hub.docker.com",
-        "ghcr.io",
-        "gcr.io",
-        "quay.io",
-        "registry.gitlab.com",
-        "mcr.microsoft.com",
-        "registry.k8s.io",
-        "public.ecr.aws",
-        "docker.pkg.github.com",
-        "pkg.dev",
-    ];
+    let known_registries = KNOWN_REGISTRIES;
 
     for registry in &known_registries {
         if potential_registry == *registry || potential_registry.ends_with(*registry) {
