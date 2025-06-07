@@ -35,19 +35,17 @@ pub fn display_pod_images(
     if show_node {
         header_cells.push("NODE");
     }
-
+    if show_namespace {
+        header_cells.push("NAMESPACE");
+    }
     if show_pod {
         header_cells.push("POD NAME");
     }
 
-    if show_namespace {
-        header_cells.push("NAMESPACE");
-    }
-
     header_cells.extend(vec![
         "CONTAINER",
-        "IMAGE NAME",
         "REGISTRY",
+        "IMAGE NAME",
         "VERSION",
         "DIGEST",
     ]);
@@ -63,16 +61,16 @@ pub fn display_pod_images(
         if show_node {
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
-        if show_pod {
-            row.add_cell(prettytable::Cell::new(&image.pod_name));
-        }
         if show_namespace {
             row.add_cell(prettytable::Cell::new(&image.namespace));
         }
+        if show_pod {
+            row.add_cell(prettytable::Cell::new(&image.pod_name));
+        }
 
         row.add_cell(prettytable::Cell::new(&image.container_name));
-        row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
         row.add_cell(prettytable::Cell::new(&image.digest));
 
