@@ -274,11 +274,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
             if let Some(image) = &container.image {
                 let registry = extract_registry(image);
                 let (_image_name, image_version) = split_image(image);
-
-                // Remove registry from image name if it exists
                 let image_name = strip_registry(&_image_name, &registry);
-
-                // Extract container digest
                 let digest = extract_container_digest(pod, &container.name).unwrap_or_default();
 
                 pod_images.push(PodImage {
