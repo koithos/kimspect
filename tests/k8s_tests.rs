@@ -206,7 +206,7 @@ fn test_process_pod_with_complex_image() {
     assert_eq!(images[0].pod_name, "test-pod");
     assert_eq!(images[0].namespace, "default");
     assert_eq!(images[0].container_name, "etcd");
-    assert_eq!(images[0].image_name, "quay.io/coreos/etcd");
+    assert_eq!(images[0].image_name, "coreos/etcd");
     assert_eq!(images[0].image_version, "v3.3.0");
     assert_eq!(images[0].registry, "quay.io");
 }
