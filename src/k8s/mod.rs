@@ -1,4 +1,4 @@
-use crate::utils::KNOWN_REGISTRIES;
+use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
@@ -12,6 +12,7 @@ pub struct PodImage {
     pub image_name: String,
     pub image_version: String,
     pub registry: String,
+    pub digest: String,
 }
 
 pub struct K8sClient {
@@ -248,6 +249,19 @@ pub fn split_image(image: &str) -> (String, String) {
     }
 }
 
+fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
+    pod.status
+        .as_ref()?
+        .container_statuses
+        .as_ref()?
+        .iter()
+        .find(|cs| cs.name == container_name)?
+        .image_id
+        .split(':')
+        .nth(1)
+        .map(String::from)
+}
+
 pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
@@ -257,7 +271,11 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
         let containers = &spec.containers;
         for container in containers {
             if let Some(image) = &container.image {
-                let (image_name, image_version) = split_image(image);
+                let registry = extract_registry(image);
+                let (_image_name, image_version) = split_image(image);
+                let image_name = strip_registry(&_image_name, &registry);
+                let digest = extract_container_digest(pod, &container.name).unwrap_or_default();
+
                 pod_images.push(PodImage {
                     pod_name: pod_name.clone(),
                     namespace: namespace.clone(),
@@ -265,7 +283,8 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     image_name,
                     image_version,
                     node_name: spec.node_name.clone().unwrap_or_default(),
-                    registry: extract_registry(image),
+                    registry,
+                    digest,
                 });
             }
         }
