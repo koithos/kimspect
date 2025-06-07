@@ -12,6 +12,7 @@ pub struct PodImage {
     pub image_name: String,
     pub image_version: String,
     pub registry: String,
+    pub digest: Option<String>,
 }
 
 pub struct K8sClient {
@@ -258,6 +259,20 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
         for container in containers {
             if let Some(image) = &container.image {
                 let (image_name, image_version) = split_image(image);
+
+                // Try to find the container status to get the image ID
+                let digest = pod.status.as_ref().and_then(|status| {
+                    status
+                        .container_statuses
+                        .as_ref()
+                        .and_then(|container_statuses| {
+                            container_statuses
+                                .iter()
+                                .find(|cs| cs.name == container.name)
+                                .map(|cs| cs.image_id.clone())
+                        })
+                });
+
                 pod_images.push(PodImage {
                     pod_name: pod_name.clone(),
                     namespace: namespace.clone(),
@@ -266,6 +281,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     image_version,
                     node_name: spec.node_name.clone().unwrap_or_default(),
                     registry: extract_registry(image),
+                    digest,
                 });
             }
         }

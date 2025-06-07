@@ -44,7 +44,13 @@ pub fn display_pod_images(
         header_cells.push("NAMESPACE");
     }
 
-    header_cells.extend(vec!["CONTAINER", "IMAGE NAME", "VERSION", "REGISTRY"]);
+    header_cells.extend(vec![
+        "CONTAINER",
+        "IMAGE NAME",
+        "VERSION",
+        "REGISTRY",
+        "DIGEST",
+    ]);
 
     let header_row = header_cells.into_iter().collect::<Vec<_>>();
     table.add_row(prettytable::Row::new(
@@ -68,6 +74,9 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
         row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        row.add_cell(prettytable::Cell::new(
+            image.digest.as_deref().unwrap_or(""),
+        ));
 
         table.add_row(row);
     }
