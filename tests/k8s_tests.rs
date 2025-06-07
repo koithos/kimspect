@@ -228,6 +228,91 @@ fn test_process_pod_with_digest() {
 }
 
 #[test]
+fn test_process_pod_with_tag_and_digest() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![create_test_container(
+            "nginx",
+            "nginx:1.21@sha256:abc123def456",
+        )],
+    );
+
+    let images = process_pod(&pod);
+    assert_eq!(images.len(), 1);
+
+    assert_eq!(images[0].image_name, "nginx");
+    assert_eq!(images[0].image_version, "1.21@sha256:abc123def456");
+    assert_eq!(images[0].registry, "docker.io");
+}
+
+#[test]
+fn test_process_pod_with_registry_and_digest() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![create_test_container(
+            "nginx",
+            "gcr.io/nginx@sha256:abc123def456",
+        )],
+    );
+
+    let images = process_pod(&pod);
+    assert_eq!(images.len(), 1);
+
+    assert_eq!(images[0].image_name, "nginx");
+    assert_eq!(images[0].image_version, "latest@sha256:abc123def456");
+    assert_eq!(images[0].registry, "gcr.io");
+}
+
+#[test]
+fn test_process_pod_with_full_path_and_digest() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![create_test_container(
+            "nginx",
+            "gcr.io/project/nginx:1.21@sha256:abc123def456",
+        )],
+    );
+
+    let images = process_pod(&pod);
+    assert_eq!(images.len(), 1);
+
+    assert_eq!(images[0].image_name, "project/nginx");
+    assert_eq!(images[0].image_version, "1.21@sha256:abc123def456");
+    assert_eq!(images[0].registry, "gcr.io");
+}
+
+#[test]
+fn test_process_pod_with_multiple_digest_containers() {
+    let pod = create_test_pod(
+        "test-pod",
+        "default",
+        vec![
+            create_test_container("nginx", "nginx:1.21@sha256:abc123def456"),
+            create_test_container("redis", "redis:6.2@sha256:def456ghi789"),
+            create_test_container("etcd", "quay.io/coreos/etcd@sha256:ghi789jkl012"),
+        ],
+    );
+
+    let images = process_pod(&pod);
+    assert_eq!(images.len(), 3);
+
+    assert_eq!(images[0].image_name, "nginx");
+    assert_eq!(images[0].image_version, "1.21@sha256:abc123def456");
+    assert_eq!(images[0].registry, "docker.io");
+
+    assert_eq!(images[1].image_name, "redis");
+    assert_eq!(images[1].image_version, "6.2@sha256:def456ghi789");
+    assert_eq!(images[1].registry, "docker.io");
+
+    assert_eq!(images[2].image_name, "coreos/etcd");
+    assert_eq!(images[2].image_version, "latest@sha256:ghi789jkl012");
+    assert_eq!(images[2].registry, "quay.io");
+}
+
+#[test]
 fn test_process_pod_with_private_registry() {
     let pod = create_test_pod(
         "test-pod",
