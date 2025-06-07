@@ -249,6 +249,20 @@ pub fn split_image(image: &str) -> (String, String) {
     }
 }
 
+fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
+    pod.status.as_ref().and_then(|status| {
+        status
+            .container_statuses
+            .as_ref()
+            .and_then(|container_statuses| {
+                container_statuses
+                    .iter()
+                    .find(|cs| cs.name == container_name)
+                    .and_then(|cs| cs.image_id.split(':').nth(1).map(|s| s.to_string()))
+            })
+    })
+}
+
 pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
@@ -264,18 +278,8 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                 // Remove registry from image name if it exists
                 let image_name = strip_registry(&_image_name, &registry);
 
-                // Try to find the container status to get the image ID and extract only the SHA256 digest
-                let digest = pod.status.as_ref().and_then(|status| {
-                    status
-                        .container_statuses
-                        .as_ref()
-                        .and_then(|container_statuses| {
-                            container_statuses
-                                .iter()
-                                .find(|cs| cs.name == container.name)
-                                .and_then(|cs| cs.image_id.split(':').nth(1).map(|s| s.to_string()))
-                        })
-                });
+                // Extract container digest
+                let digest = extract_container_digest(pod, &container.name).unwrap_or_default();
 
                 pod_images.push(PodImage {
                     pod_name: pod_name.clone(),
@@ -285,7 +289,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     image_version,
                     node_name: spec.node_name.clone().unwrap_or_default(),
                     registry,
-                    digest: digest.unwrap_or_default(),
+                    digest,
                 });
             }
         }
