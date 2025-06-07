@@ -74,9 +74,7 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
         row.add_cell(prettytable::Cell::new(&image.image_version));
-        row.add_cell(prettytable::Cell::new(
-            image.digest.as_deref().unwrap_or(""),
-        ));
+        row.add_cell(prettytable::Cell::new(&image.digest));
 
         table.add_row(row);
     }

@@ -12,7 +12,7 @@ pub struct PodImage {
     pub image_name: String,
     pub image_version: String,
     pub registry: String,
-    pub digest: Option<String>,
+    pub digest: String,
 }
 
 pub struct K8sClient {
@@ -292,7 +292,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     image_version,
                     node_name: spec.node_name.clone().unwrap_or_default(),
                     registry,
-                    digest,
+                    digest: digest.unwrap_or_default(),
                 });
             }
         }
