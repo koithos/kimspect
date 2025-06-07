@@ -244,7 +244,7 @@ fn test_process_pod_with_private_registry() {
     assert_eq!(images[0].pod_name, "test-pod");
     assert_eq!(images[0].namespace, "default");
     assert_eq!(images[0].container_name, "nginx");
-    assert_eq!(images[0].image_name, "my-registry:5000/nginx");
+    assert_eq!(images[0].image_name, "nginx");
     assert_eq!(images[0].image_version, "1.21");
     assert_eq!(images[0].registry, "my-registry:5000");
 }
@@ -294,7 +294,7 @@ fn test_registry_filtering() {
         .collect();
     assert_eq!(docker_images.len(), 1);
     assert_eq!(docker_images[0].container_name, "nginx");
-    assert_eq!(docker_images[0].image_name, "docker.io/nginx");
+    assert_eq!(docker_images[0].image_name, "nginx");
 
     // Test filtering for gcr.io registry
     let gcr_images: Vec<_> = images
@@ -303,7 +303,7 @@ fn test_registry_filtering() {
         .collect();
     assert_eq!(gcr_images.len(), 1);
     assert_eq!(gcr_images[0].container_name, "redis");
-    assert_eq!(gcr_images[0].image_name, "gcr.io/google-containers/redis");
+    assert_eq!(gcr_images[0].image_name, "google-containers/redis");
 
     // Test filtering for quay.io registry
     let quay_images: Vec<_> = images
@@ -312,7 +312,7 @@ fn test_registry_filtering() {
         .collect();
     assert_eq!(quay_images.len(), 1);
     assert_eq!(quay_images[0].container_name, "etcd");
-    assert_eq!(quay_images[0].image_name, "quay.io/coreos/etcd");
+    assert_eq!(quay_images[0].image_name, "coreos/etcd");
 
     // Test filtering for private registry
     let private_images: Vec<_> = images
@@ -321,7 +321,7 @@ fn test_registry_filtering() {
         .collect();
     assert_eq!(private_images.len(), 1);
     assert_eq!(private_images[0].container_name, "api");
-    assert_eq!(private_images[0].image_name, "my-registry:5000/api");
+    assert_eq!(private_images[0].image_name, "api");
 }
 
 #[test]
