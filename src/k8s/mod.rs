@@ -258,7 +258,18 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
         let containers = &spec.containers;
         for container in containers {
             if let Some(image) = &container.image {
-                let (image_name, image_version) = split_image(image);
+                let registry = extract_registry(image);
+                let (_image_name, image_version) = split_image(image);
+
+                // Remove registry from image name if it exists
+                let image_name = if _image_name.starts_with(&registry) {
+                    _image_name
+                        .strip_prefix(&format!("{}/", registry))
+                        .unwrap_or(&_image_name)
+                        .to_string()
+                } else {
+                    _image_name
+                };
 
                 // Try to find the container status to get the image ID and extract only the SHA256 digest
                 let digest = pod.status.as_ref().and_then(|status| {
@@ -280,7 +291,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     image_name,
                     image_version,
                     node_name: spec.node_name.clone().unwrap_or_default(),
-                    registry: extract_registry(image),
+                    registry,
                     digest,
                 });
             }
