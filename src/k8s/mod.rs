@@ -250,17 +250,16 @@ pub fn split_image(image: &str) -> (String, String) {
 }
 
 fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
-    pod.status.as_ref().and_then(|status| {
-        status
-            .container_statuses
-            .as_ref()
-            .and_then(|container_statuses| {
-                container_statuses
-                    .iter()
-                    .find(|cs| cs.name == container_name)
-                    .and_then(|cs| cs.image_id.split(':').nth(1).map(|s| s.to_string()))
-            })
-    })
+    pod.status
+        .as_ref()?
+        .container_statuses
+        .as_ref()?
+        .iter()
+        .find(|cs| cs.name == container_name)?
+        .image_id
+        .split(':')
+        .nth(1)
+        .map(String::from)
 }
 
 pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
