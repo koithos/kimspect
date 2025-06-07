@@ -1,4 +1,4 @@
-use crate::utils::KNOWN_REGISTRIES;
+use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
@@ -262,14 +262,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                 let (_image_name, image_version) = split_image(image);
 
                 // Remove registry from image name if it exists
-                let image_name = if _image_name.starts_with(&registry) {
-                    _image_name
-                        .strip_prefix(&format!("{}/", registry))
-                        .unwrap_or(&_image_name)
-                        .to_string()
-                } else {
-                    _image_name
-                };
+                let image_name = strip_registry(&_image_name, &registry);
 
                 // Try to find the container status to get the image ID and extract only the SHA256 digest
                 let digest = pod.status.as_ref().and_then(|status| {

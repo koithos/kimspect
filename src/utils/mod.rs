@@ -80,3 +80,24 @@ pub fn display_pod_images(
     table.printstd();
     println!("\n{}", "=".repeat(80));
 }
+
+/// Strips the registry prefix from an image name if it exists.
+///
+/// # Arguments
+///
+/// * `image_name` - The full image name that may include a registry prefix
+/// * `registry` - The registry to strip from the image name
+///
+/// # Returns
+///
+/// The image name without the registry prefix
+pub fn strip_registry(image_name: &str, registry: &str) -> String {
+    if image_name.starts_with(registry) {
+        image_name
+            .strip_prefix(&format!("{}/", registry))
+            .unwrap_or(image_name)
+            .to_string()
+    } else {
+        image_name.to_string()
+    }
+}
