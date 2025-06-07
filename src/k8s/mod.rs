@@ -260,7 +260,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
             if let Some(image) = &container.image {
                 let (image_name, image_version) = split_image(image);
 
-                // Try to find the container status to get the image ID
+                // Try to find the container status to get the image ID and extract only the SHA256 digest
                 let digest = pod.status.as_ref().and_then(|status| {
                     status
                         .container_statuses
@@ -269,7 +269,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                             container_statuses
                                 .iter()
                                 .find(|cs| cs.name == container.name)
-                                .map(|cs| cs.image_id.clone())
+                                .and_then(|cs| cs.image_id.split(':').nth(1).map(|s| s.to_string()))
                         })
                 });
 
