@@ -2,6 +2,8 @@ use crate::k8s::PodImage;
 use colored::*;
 use prettytable::Table;
 
+pub mod logging;
+
 pub const KNOWN_REGISTRIES: [&str; 11] = [
     "docker.io",
     "registry.hub.docker.com",
