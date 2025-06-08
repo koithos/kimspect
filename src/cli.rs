@@ -1,3 +1,4 @@
+use crate::utils::logging::LogFormat;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -10,6 +11,10 @@ pub struct Args {
     /// -vvvv: TRACE level
     #[arg(short = 'v', long = "verbose", global = true, action = clap::ArgAction::Count)]
     pub verbose: u8,
+
+    /// Log format to use (default: plain for local development)
+    #[arg(long = "log-format", default_value = "plain", value_parser = ["plain", "json"])]
+    pub log_format: String,
 
     #[command(subcommand)]
     pub command: Commands,
@@ -50,4 +55,14 @@ pub enum GetResource {
         #[arg(short = 'A', long = "all-namespaces", conflicts_with = "namespace")]
         all_namespaces: bool,
     },
+}
+
+impl Args {
+    /// Get the log format based on the command line argument
+    pub fn get_log_format(&self) -> LogFormat {
+        match self.log_format.as_str() {
+            "json" => LogFormat::Json,
+            _ => LogFormat::Plain,
+        }
+    }
 }

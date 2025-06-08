@@ -11,8 +11,12 @@ use tracing::{debug, error, info, warn};
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    // Initialize logging
-    logging::init_logging(logging::configure_logging(args.verbose)).unwrap();
+    // Initialize logging with the specified format
+    logging::init_logging(
+        logging::configure_logging(args.verbose),
+        args.get_log_format(),
+    )
+    .unwrap();
     debug!("Application started with args: {:?}", args);
 
     // Try to create the client first with better error handling
