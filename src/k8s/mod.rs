@@ -2,7 +2,7 @@ use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, instrument};
 
 #[derive(Debug)]
 pub struct PodImage {
@@ -21,6 +21,7 @@ pub struct K8sClient {
 }
 
 impl K8sClient {
+    #[instrument(skip_all)]
     pub async fn new() -> Result<Self> {
         debug!("Initializing Kubernetes client");
 
@@ -58,6 +59,7 @@ impl K8sClient {
         Ok(k8s_client)
     }
 
+    #[instrument(skip(self))]
     pub async fn is_accessible(&self) -> Result<bool> {
         debug!("Checking cluster accessibility");
         // Try to access the API server by making a simple request
@@ -88,6 +90,7 @@ impl K8sClient {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn is_initialized(&self) -> Result<bool> {
         // Try to list pods in the default namespace to verify client is working
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), "default");
@@ -97,6 +100,13 @@ impl K8sClient {
             .or_else(|_| Ok(false))
     }
 
+    #[instrument(skip(self), fields(
+        namespace = %namespace,
+        node = ?node_name,
+        pod = ?pod_name,
+        registry = ?registry_filter,
+        all_namespaces = %all_namespaces
+    ))]
     pub async fn get_pod_images(
         &self,
         namespace: &str,
