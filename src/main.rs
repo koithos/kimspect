@@ -1,4 +1,5 @@
 use anyhow::Result;
+use clap::Parser;
 use kelper::{
     cli::{Args, Commands, GetResource},
     k8s::K8sClient,
@@ -8,7 +9,6 @@ use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    use clap::Parser;
     let args = Args::parse();
 
     // Initialize logging

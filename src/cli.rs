@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Enable verbose logging
-    #[arg(short = 'V', long = "verbose")]
+    #[arg(short = 'V', long = "verbose", global = true)]
     pub verbose: bool,
 
     #[command(subcommand)]

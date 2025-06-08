@@ -1,6 +1,6 @@
 use crate::k8s::PodImage;
-use colored::*;
 use prettytable::Table;
+use tracing::warn;
 
 pub mod logging;
 
@@ -25,7 +25,7 @@ pub fn display_pod_images(
     show_pod: bool,
 ) {
     if images.is_empty() {
-        println!("{}", "No images found matching criteria.".yellow());
+        warn!("No images found matching criteria");
         return;
     }
 
