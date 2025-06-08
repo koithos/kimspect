@@ -15,9 +15,13 @@ pub fn init_logging(level: Level) -> io::Result<()> {
         .with_current_span(true)
         .with_span_list(true);
 
+    // Create a filter that excludes sensitive information from rustls
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(format!("{}", level)))
-        .unwrap();
+        .unwrap()
+        .add_directive("rustls=ERROR".parse().unwrap()) // Only show errors from rustls
+        .add_directive("rustls::client=ERROR".parse().unwrap()) // Specifically filter client logs
+        .add_directive("rustls::client::tls13=ERROR".parse().unwrap()); // Filter TLS 1.3 specific logs
 
     tracing_subscriber::registry()
         .with(filter_layer)
