@@ -5,7 +5,7 @@ use kelper::{
     k8s::K8sClient,
     utils::{display_pod_images, logging},
 };
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -13,6 +13,7 @@ async fn main() -> Result<()> {
 
     // Initialize logging
     logging::init_logging(logging::configure_logging(args.verbose)).unwrap();
+    debug!("Application started with args: {:?}", args);
 
     // Try to create the client first with better error handling
     let client = match K8sClient::new().await {
@@ -50,13 +51,13 @@ async fn main() -> Result<()> {
                 registry,
                 all_namespaces,
             } => {
-                info!(
+                debug!(
                     namespace = %namespace,
                     node = ?node,
                     pod = ?pod,
                     registry = ?registry,
                     all_namespaces = %all_namespaces,
-                    "Fetching pod images"
+                    "Processing get images command"
                 );
 
                 match client
@@ -79,10 +80,17 @@ async fn main() -> Result<()> {
                                 all_namespaces || (node.is_some() && namespace == "default");
                             let show_pod = pod.is_none();
 
+                            debug!(
+                                show_node = %show_node,
+                                show_namespace = %show_namespace,
+                                show_pod = %show_pod,
+                                "Displaying pod images"
+                            );
+
                             display_pod_images(&pod_images, show_node, show_namespace, show_pod);
                             info!(
                                 count = pod_images.len(),
-                                "Successfully retrieved pod images"
+                                "Successfully displayed pod images"
                             );
                         }
                     }
@@ -95,5 +103,6 @@ async fn main() -> Result<()> {
         },
     }
 
+    debug!("Application completed successfully");
     Ok(())
 }

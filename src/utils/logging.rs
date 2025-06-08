@@ -32,6 +32,6 @@ pub fn configure_logging(verbose: bool) -> Level {
     if verbose {
         Level::DEBUG
     } else {
-        Level::INFO
+        Level::ERROR
     }
 }
