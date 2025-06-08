@@ -26,10 +26,11 @@ pub fn display_pod_images(
         println!("{}", "No images found matching criteria.".yellow());
         return;
     }
-    println!("\n{}", "Pod Images and Registries:".green().bold());
-    println!("{}", "=".repeat(80));
 
     let mut table = Table::new();
+    // Set format to remove borders
+    table.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+
     let mut header_cells = Vec::new();
 
     if show_node {
@@ -78,7 +79,6 @@ pub fn display_pod_images(
     }
 
     table.printstd();
-    println!("\n{}", "=".repeat(80));
 }
 
 /// Strips the registry prefix from an image name if it exists.
