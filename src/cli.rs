@@ -3,9 +3,13 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    /// Enable verbose logging
-    #[arg(short = 'V', long = "verbose", global = true)]
-    pub verbose: bool,
+    /// Enable verbose logging. Use multiple v's for increased verbosity:
+    /// -v: WARN level
+    /// -vv: INFO level
+    /// -vvv: DEBUG level
+    /// -vvvv: TRACE level
+    #[arg(short = 'v', long = "verbose", global = true, action = clap::ArgAction::Count)]
+    pub verbose: u8,
 
     #[command(subcommand)]
     pub command: Commands,

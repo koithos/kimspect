@@ -27,11 +27,18 @@ pub fn init_logging(level: Level) -> io::Result<()> {
     Ok(())
 }
 
-/// Configure the logging level based on verbosity
-pub fn configure_logging(verbose: bool) -> Level {
-    if verbose {
-        Level::DEBUG
-    } else {
-        Level::ERROR
+/// Configure the logging level based on verbosity count
+/// - 0: ERROR level (default)
+/// - 1: WARN level
+/// - 2: INFO level
+/// - 3: DEBUG level
+/// - 4+: TRACE level
+pub fn configure_logging(verbose: u8) -> Level {
+    match verbose {
+        0 => Level::ERROR,
+        1 => Level::WARN,
+        2 => Level::INFO,
+        3 => Level::DEBUG,
+        _ => Level::TRACE,
     }
 }
