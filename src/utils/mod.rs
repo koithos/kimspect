@@ -35,23 +35,18 @@ pub fn display_pod_images(
 
     let mut header_cells = Vec::new();
 
-    if show_node {
-        header_cells.push("NODE");
+    if show_pod {
+        header_cells.push("POD");
     }
     if show_namespace {
         header_cells.push("NAMESPACE");
     }
-    if show_pod {
-        header_cells.push("POD NAME");
-    }
 
-    header_cells.extend(vec![
-        "CONTAINER",
-        "REGISTRY",
-        "IMAGE NAME",
-        "VERSION",
-        "DIGEST",
-    ]);
+    header_cells.extend(vec!["CONTAINER", "REGISTRY", "IMAGE", "VERSION", "DIGEST"]);
+
+    if show_node {
+        header_cells.push("NODE");
+    }
 
     let header_row = header_cells.into_iter().collect::<Vec<_>>();
     table.add_row(prettytable::Row::new(
@@ -61,14 +56,11 @@ pub fn display_pod_images(
     for image in images {
         let mut row = prettytable::Row::new(Vec::new());
 
-        if show_node {
-            row.add_cell(prettytable::Cell::new(&image.node_name));
+        if show_pod {
+            row.add_cell(prettytable::Cell::new(&image.pod_name));
         }
         if show_namespace {
             row.add_cell(prettytable::Cell::new(&image.namespace));
-        }
-        if show_pod {
-            row.add_cell(prettytable::Cell::new(&image.pod_name));
         }
 
         row.add_cell(prettytable::Cell::new(&image.container_name));
@@ -76,6 +68,10 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
         row.add_cell(prettytable::Cell::new(&image.digest));
+
+        if show_node {
+            row.add_cell(prettytable::Cell::new(&image.node_name));
+        }
 
         table.add_row(row);
     }
