@@ -82,10 +82,10 @@ kelper get images --registry "quay.io" --node node-name
 kelper get images --registry "quay.io" --all-namespaces
 
 # Enable verbose logging
-kelper get images -v  # WARN level
-kelper get images -vv  # INFO level
-kelper get images -vvv  # DEBUG level
-kelper get images -vvvv  # TRACE level
+kelper get images -v  # WARN
+kelper get images -vv  # INFO
+kelper get images -vvv  # DEBUG
+kelper get images -vvvv  # TRACE
 
 # Use JSON log format
 kelper get images -vvv --log-format json
