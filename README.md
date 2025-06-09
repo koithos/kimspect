@@ -6,9 +6,16 @@ A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and 
 
 ## Features
 
-- [x] List images in a Kubernetes cluster based on different filters, e.g., image details in a pod, namespace, or node.
-- [ ] Get labels and annotations in a pod, namespace, or node.
-- [ ] Retrieve health and metrics from pods or nodes.
+- [x] List images in a Kubernetes cluster based on different filters:
+  - Filter by namespace
+  - Filter by node
+  - Filter by pod name
+  - Filter by container image registry
+- [x] Advanced logging capabilities:
+  - Multiple verbosity levels (-v, -vv, -vvv, -vvvv)
+  - Support for both plain and JSON log formats
+- [ ] Get labels and annotations in a pod, namespace, or node (coming soon)
+- [ ] Retrieve health and metrics from pods or nodes (coming soon)
 
 ## Installation
 
@@ -44,18 +51,17 @@ kubectl krew install kelper
 ### Get image details with multiple filters
 
 ```bash
-### List Pod Images in a Namespace
+# List Pod Images in a Namespace
 kelper get images --namespace default
 
-### List Pod Images on a Specific Node
+# List Pod Images on a Specific Node
 kelper get images -N node-name
 # or
 kelper get images --node node-name
 
-
 # Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
 
-### List Images for a Specific Pod
+# List Images for a Specific Pod
 kelper get images -p pod-name
 # or
 kelper get images --pod pod-name
@@ -63,17 +69,26 @@ kelper get images --pod pod-name
 # You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
 kelper get images -N node-name -p pod-name
 
-# You can also use the `--all-namespaces` flag to list images from all namespaces:
+# List images from all namespaces
 kelper get images --all-namespaces
 
-### List images with a specific registry
+# Filter images by registry
 kelper get images --registry "docker.io" --namespace kube-system
 
-### List images with a specific registry in a Node
-kelper get pods --registry "quay.io" --node node-name
+# Filter images by registry in a specific node
+kelper get images --registry "quay.io" --node node-name
 
-### List all images with a specific registry
-kelper get pods --registry "quay.io" --all-namespaces
+# Filter images by registry across all namespaces
+kelper get images --registry "quay.io" --all-namespaces
+
+# Enable verbose logging
+kelper get images -v  # WARN level
+kelper get images -vv  # INFO level
+kelper get images -vvv  # DEBUG level
+kelper get images -vvvv  # TRACE level
+
+# Use JSON log format
+kelper get images -vvv --log-format json
 ```
 
 Kelper displays information in a clean tabular format:
