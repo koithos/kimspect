@@ -54,6 +54,10 @@ pub enum GetResource {
 
         #[arg(short = 'A', long = "all-namespaces", conflicts_with = "namespace")]
         all_namespaces: bool,
+
+        /// Output format (default: normal, wide: shows additional columns)
+        #[arg(short = 'o', long = "output", default_value = "normal", value_parser = ["normal", "wide"])]
+        output: String,
     },
 }
 

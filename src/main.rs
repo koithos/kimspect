@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
                 pod,
                 registry,
                 all_namespaces,
+                output,
             } => {
                 debug!(
                     namespace = %namespace,
@@ -61,6 +62,7 @@ async fn main() -> Result<()> {
                     pod = ?pod,
                     registry = ?registry,
                     all_namespaces = %all_namespaces,
+                    output = %output,
                     "Processing get images command"
                 );
 
@@ -88,10 +90,17 @@ async fn main() -> Result<()> {
                                 show_node = %show_node,
                                 show_namespace = %show_namespace,
                                 show_pod = %show_pod,
+                                output = %output,
                                 "Displaying pod images"
                             );
 
-                            display_pod_images(&pod_images, show_node, show_namespace, show_pod);
+                            display_pod_images(
+                                &pod_images,
+                                show_node,
+                                show_namespace,
+                                show_pod,
+                                &output,
+                            );
                             info!(
                                 count = pod_images.len(),
                                 "Successfully displayed pod images"

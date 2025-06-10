@@ -23,6 +23,7 @@ pub fn display_pod_images(
     show_node: bool,
     show_namespace: bool,
     show_pod: bool,
+    output_format: &str,
 ) {
     if images.is_empty() {
         warn!("No images found matching criteria");
@@ -42,9 +43,17 @@ pub fn display_pod_images(
         header_cells.push("NAMESPACE");
     }
 
-    header_cells.extend(vec!["CONTAINER", "REGISTRY", "IMAGE", "VERSION", "DIGEST"]);
+    header_cells.push("CONTAINER");
+    if output_format == "wide" {
+        header_cells.push("REGISTRY");
+    }
+    header_cells.push("IMAGE");
+    header_cells.push("VERSION");
+    if output_format == "wide" {
+        header_cells.push("DIGEST");
+    }
 
-    if show_node {
+    if show_node && output_format == "wide" {
         header_cells.push("NODE");
     }
 
@@ -64,12 +73,16 @@ pub fn display_pod_images(
         }
 
         row.add_cell(prettytable::Cell::new(&image.container_name));
-        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        if output_format == "wide" {
+            row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        }
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
-        row.add_cell(prettytable::Cell::new(&image.digest));
+        if output_format == "wide" {
+            row.add_cell(prettytable::Cell::new(&image.digest));
+        }
 
-        if show_node {
+        if show_node && output_format == "wide" {
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
 
