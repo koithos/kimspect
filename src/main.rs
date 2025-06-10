@@ -80,27 +80,12 @@ async fn main() -> Result<()> {
                         if pod_images.is_empty() {
                             warn!("No pod images found matching your criteria");
                         } else {
-                            // Determine which columns to show
-                            let show_node = node.is_none();
-                            let show_namespace =
-                                all_namespaces || (node.is_some() && namespace == "default");
-                            let show_pod = pod.is_none();
-
                             debug!(
-                                show_node = %show_node,
-                                show_namespace = %show_namespace,
-                                show_pod = %show_pod,
                                 output = %output,
                                 "Displaying pod images"
                             );
 
-                            display_pod_images(
-                                &pod_images,
-                                show_node,
-                                show_namespace,
-                                show_pod,
-                                &output,
-                            );
+                            display_pod_images(&pod_images, &output);
                             info!(
                                 count = pod_images.len(),
                                 "Successfully displayed pod images"

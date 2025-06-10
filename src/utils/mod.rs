@@ -18,13 +18,7 @@ pub const KNOWN_REGISTRIES: [&str; 11] = [
     "pkg.dev",
 ];
 
-pub fn display_pod_images(
-    images: &[PodImage],
-    show_node: bool,
-    show_namespace: bool,
-    show_pod: bool,
-    output_format: &str,
-) {
+pub fn display_pod_images(images: &[PodImage], output_format: &str) {
     if images.is_empty() {
         warn!("No images found matching criteria");
         return;
@@ -36,13 +30,8 @@ pub fn display_pod_images(
 
     let mut header_cells = Vec::new();
 
-    if show_pod {
-        header_cells.push("POD");
-    }
-    if show_namespace {
-        header_cells.push("NAMESPACE");
-    }
-
+    header_cells.push("POD");
+    header_cells.push("NAMESPACE");
     header_cells.push("CONTAINER");
     if output_format == "wide" {
         header_cells.push("REGISTRY");
@@ -51,9 +40,6 @@ pub fn display_pod_images(
     header_cells.push("VERSION");
     if output_format == "wide" {
         header_cells.push("DIGEST");
-    }
-
-    if show_node && output_format == "wide" {
         header_cells.push("NODE");
     }
 
@@ -65,13 +51,8 @@ pub fn display_pod_images(
     for image in images {
         let mut row = prettytable::Row::new(Vec::new());
 
-        if show_pod {
-            row.add_cell(prettytable::Cell::new(&image.pod_name));
-        }
-        if show_namespace {
-            row.add_cell(prettytable::Cell::new(&image.namespace));
-        }
-
+        row.add_cell(prettytable::Cell::new(&image.pod_name));
+        row.add_cell(prettytable::Cell::new(&image.namespace));
         row.add_cell(prettytable::Cell::new(&image.container_name));
         if output_format == "wide" {
             row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
@@ -80,9 +61,6 @@ pub fn display_pod_images(
         row.add_cell(prettytable::Cell::new(&image.image_version));
         if output_format == "wide" {
             row.add_cell(prettytable::Cell::new(&image.digest));
-        }
-
-        if show_node && output_format == "wide" {
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
 
