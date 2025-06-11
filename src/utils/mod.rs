@@ -2,6 +2,7 @@ use crate::k8s::PodImage;
 use prettytable::Table;
 use tracing::warn;
 
+pub mod enums;
 pub mod logging;
 
 pub const KNOWN_REGISTRIES: [&str; 11] = [
