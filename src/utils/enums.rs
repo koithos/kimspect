@@ -1,4 +1,4 @@
-use clap::Subcommand;
+use clap::{Subcommand, ValueEnum};
 
 /// Logging format options
 #[derive(Debug, Clone, Copy)]
@@ -7,6 +7,15 @@ pub enum LogFormat {
     Plain,
     /// JSON format, better for production and machine parsing
     Json,
+}
+
+/// Output format options for displaying data
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
+pub enum OutputFormat {
+    /// Standard output format with essential columns
+    Normal,
+    /// Extended output format with additional columns
+    Wide,
 }
 
 /// CLI command structure
@@ -47,7 +56,7 @@ pub enum GetResource {
         all_namespaces: bool,
 
         /// Output format (default: normal, wide: shows additional columns)
-        #[arg(short = 'o', long = "output", default_value = "normal", value_parser = ["normal", "wide"])]
-        output: String,
+        #[arg(short = 'o', long = "output", default_value = "normal")]
+        output: OutputFormat,
     },
 }

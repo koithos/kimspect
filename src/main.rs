@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
                     pod = ?pod,
                     registry = ?registry,
                     all_namespaces = %all_namespaces,
-                    output = %output,
+                    output = ?output,
                     "Processing get images command"
                 );
 
@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
                             warn!("No pod images found matching your criteria");
                         } else {
                             debug!(
-                                output = %output,
+                                output = ?output,
                                 "Displaying pod images"
                             );
 

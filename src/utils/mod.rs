@@ -1,4 +1,5 @@
 use crate::k8s::PodImage;
+use crate::utils::enums::OutputFormat;
 use prettytable::Table;
 use tracing::warn;
 
@@ -19,7 +20,7 @@ pub const KNOWN_REGISTRIES: [&str; 11] = [
     "pkg.dev",
 ];
 
-pub fn display_pod_images(images: &[PodImage], output_format: &str) {
+pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) {
     if images.is_empty() {
         warn!("No images found matching criteria");
         return;
@@ -34,12 +35,12 @@ pub fn display_pod_images(images: &[PodImage], output_format: &str) {
     header_cells.push("POD");
     header_cells.push("NAMESPACE");
     header_cells.push("CONTAINER");
-    if output_format == "wide" {
+    if matches!(output_format, OutputFormat::Wide) {
         header_cells.push("REGISTRY");
     }
     header_cells.push("IMAGE");
     header_cells.push("VERSION");
-    if output_format == "wide" {
+    if matches!(output_format, OutputFormat::Wide) {
         header_cells.push("DIGEST");
         header_cells.push("NODE");
     }
@@ -55,12 +56,12 @@ pub fn display_pod_images(images: &[PodImage], output_format: &str) {
         row.add_cell(prettytable::Cell::new(&image.pod_name));
         row.add_cell(prettytable::Cell::new(&image.namespace));
         row.add_cell(prettytable::Cell::new(&image.container_name));
-        if output_format == "wide" {
+        if matches!(output_format, OutputFormat::Wide) {
             row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
         }
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
-        if output_format == "wide" {
+        if matches!(output_format, OutputFormat::Wide) {
             row.add_cell(prettytable::Cell::new(&image.digest));
             row.add_cell(prettytable::Cell::new(&image.node_name));
         }
