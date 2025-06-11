@@ -27,8 +27,16 @@ pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) {
     }
 
     let mut table = Table::new();
-    // Set format to remove borders
-    table.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+    // Set format to remove borders and extra spacing
+    let format = prettytable::format::FormatBuilder::new()
+        .column_separator(' ')
+        .separator(
+            prettytable::format::LinePosition::Title,
+            prettytable::format::LineSeparator::new('-', '-', '-', '-'),
+        )
+        .padding(0, 1)
+        .build();
+    table.set_format(format);
 
     let mut header_cells = Vec::new();
 
