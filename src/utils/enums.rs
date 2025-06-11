@@ -24,13 +24,13 @@ pub enum Commands {
     /// Get information about Kubernetes resources
     Get {
         #[command(subcommand)]
-        resource: GetResource,
+        resource: GetImages,
     },
 }
 
 /// Resource types that can be queried
 #[derive(Subcommand, Debug)]
-pub enum GetResource {
+pub enum GetImages {
     /// List pod images and their registries
     Images {
         /// Kubernetes namespace to query (defaults to "default", ignored when --node is specified)

@@ -5,7 +5,7 @@ use kelper::{
     k8s::K8sClient,
     utils::{
         display_pod_images,
-        enums::{Commands, GetResource},
+        enums::{Commands, GetImages},
         logging,
     },
 };
@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::Get { resource } => match resource {
-            GetResource::Images {
+            GetImages::Images {
                 namespace,
                 node,
                 pod,
