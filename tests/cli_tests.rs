@@ -1,9 +1,5 @@
 use clap::Parser;
-use kelper::cli::Args;
-use kelper::cli::{
-    commands::{Commands, GetImages},
-    formats::OutputFormat,
-};
+use kelper::{Args, Commands, GetImages, OutputFormat};
 
 #[test]
 fn test_cli_parse_get_images_default() {

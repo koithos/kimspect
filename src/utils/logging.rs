@@ -1,4 +1,4 @@
-use crate::cli::formats::LogFormat;
+use crate::LogFormat;
 use std::error::Error;
 use tracing::Level;
 use tracing_subscriber::{fmt::time::ChronoUtc, prelude::*, EnvFilter};

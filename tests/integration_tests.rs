@@ -1,5 +1,5 @@
 use anyhow::Result;
-use kelper::k8s::K8sClient;
+use kelper::K8sClient;
 
 #[tokio::test]
 async fn test_k8s_client_creation() -> Result<()> {

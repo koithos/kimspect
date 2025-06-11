@@ -1,10 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use kelper::{
-    cli::{Args, Commands, GetImages},
-    k8s::K8sClient,
-    utils::{display_pod_images, logging},
-};
+use kelper::{display_pod_images, logging, Args, Commands, GetImages, K8sClient};
 use tracing::{debug, error, info, warn};
 
 #[tokio::main]

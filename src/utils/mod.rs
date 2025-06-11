@@ -1,5 +1,4 @@
-use crate::cli::formats::OutputFormat;
-use crate::k8s::PodImage;
+use crate::{k8s::PodImage, OutputFormat};
 use prettytable::Table;
 use tracing::warn;
 

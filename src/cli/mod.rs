@@ -1,6 +1,6 @@
-pub mod args;
-pub mod commands;
-pub mod formats;
+mod args;
+mod commands;
+mod formats;
 
 pub use args::Args;
 pub use commands::{Commands, GetImages};
