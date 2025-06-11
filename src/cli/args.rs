@@ -1,4 +1,5 @@
-use crate::cli::{Commands, LogFormat};
+use crate::cli::formats::LogFormat;
+use crate::cli::Commands;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -13,7 +14,12 @@ pub struct Args {
     pub verbose: u8,
 
     /// Log format to use (default: plain for local development)
-    #[arg(long = "log-format", default_value = "plain")]
+    #[arg(
+        long = "log-format",
+        default_value = "plain",
+        global = true,
+        requires = "verbose"
+    )]
     pub log_format: LogFormat,
 
     #[command(subcommand)]

@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
     };
 
     match args.command {
-        Commands::Get { resource } => match resource {
+        Commands::Get { resource, .. } => match resource {
             GetImages::Images {
                 namespace,
                 node,

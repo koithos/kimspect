@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 
 /// Logging format options
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
 pub enum LogFormat {
     /// Plain text format, better for local development
     Plain,
