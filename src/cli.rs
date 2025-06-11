@@ -13,8 +13,8 @@ pub struct Args {
     pub verbose: u8,
 
     /// Log format to use (default: plain for local development)
-    #[arg(long = "log-format", default_value = "plain", value_parser = ["plain", "json"])]
-    pub log_format: String,
+    #[arg(long = "log-format", default_value = "plain")]
+    pub log_format: LogFormat,
 
     #[command(subcommand)]
     pub command: Commands,
@@ -23,9 +23,6 @@ pub struct Args {
 impl Args {
     /// Get the log format based on the command line argument
     pub fn get_log_format(&self) -> LogFormat {
-        match self.log_format.as_str() {
-            "json" => LogFormat::Json,
-            _ => LogFormat::Plain,
-        }
+        self.log_format
     }
 }
