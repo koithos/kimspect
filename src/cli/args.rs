@@ -19,10 +19,3 @@ pub struct Args {
     #[command(subcommand)]
     pub command: Commands,
 }
-
-impl Args {
-    /// Get the log format based on the command line argument
-    pub fn get_log_format(&self) -> LogFormat {
-        self.log_format
-    }
-}
