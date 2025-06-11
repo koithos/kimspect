@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use kelper::{
-    cli::{Args, Commands, GetResource},
+    cli::{Args, Commands, GetImages},
     k8s::K8sClient,
     utils::{display_pod_images, logging},
 };
@@ -12,11 +12,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Initialize logging with the specified format
-    logging::init_logging(
-        logging::configure_logging(args.verbose),
-        args.get_log_format(),
-    )
-    .unwrap();
+    logging::init_logging(logging::configure_logging(args.verbose), args.log_format).unwrap();
     debug!("Application started with args: {:?}", args);
 
     // Try to create the client first with better error handling
@@ -47,13 +43,14 @@ async fn main() -> Result<()> {
     };
 
     match args.command {
-        Commands::Get { resource } => match resource {
-            GetResource::Images {
+        Commands::Get { resource, .. } => match resource {
+            GetImages::Images {
                 namespace,
                 node,
                 pod,
                 registry,
                 all_namespaces,
+                output,
             } => {
                 debug!(
                     namespace = %namespace,
@@ -61,6 +58,7 @@ async fn main() -> Result<()> {
                     pod = ?pod,
                     registry = ?registry,
                     all_namespaces = %all_namespaces,
+                    output = ?output,
                     "Processing get images command"
                 );
 
@@ -78,20 +76,12 @@ async fn main() -> Result<()> {
                         if pod_images.is_empty() {
                             warn!("No pod images found matching your criteria");
                         } else {
-                            // Determine which columns to show
-                            let show_node = node.is_none();
-                            let show_namespace =
-                                all_namespaces || (node.is_some() && namespace == "default");
-                            let show_pod = pod.is_none();
-
                             debug!(
-                                show_node = %show_node,
-                                show_namespace = %show_namespace,
-                                show_pod = %show_pod,
+                                output = ?output,
                                 "Displaying pod images"
                             );
 
-                            display_pod_images(&pod_images, show_node, show_namespace, show_pod);
+                            display_pod_images(&pod_images, &output);
                             info!(
                                 count = pod_images.len(),
                                 "Successfully displayed pod images"

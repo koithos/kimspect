@@ -1,17 +1,22 @@
 use clap::Parser;
-use kelper::cli::{Args, Commands, GetResource};
+use kelper::cli::Args;
+use kelper::cli::{
+    commands::{Commands, GetImages},
+    formats::OutputFormat,
+};
 
 #[test]
 fn test_cli_parse_get_images_default() {
     let args = Args::parse_from(["kelper", "get", "images"]);
 
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -19,18 +24,20 @@ fn test_cli_parse_get_images_default() {
     assert!(pod.is_none());
     assert!(registry.is_none());
     assert!(!all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
 }
 
 #[test]
 fn test_cli_parse_get_images_namespace() {
     let args = Args::parse_from(["kelper", "get", "images", "--namespace", "test-ns"]);
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     assert_eq!(namespace, "test-ns");
@@ -38,18 +45,20 @@ fn test_cli_parse_get_images_namespace() {
     assert!(pod.is_none());
     assert!(registry.is_none());
     assert!(!all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
 }
 
 #[test]
 fn test_cli_parse_get_images_all_namespaces() {
     let args = Args::parse_from(["kelper", "get", "images", "--all-namespaces"]);
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     // namespace should still be default, but all_namespaces flag should be true
@@ -58,6 +67,7 @@ fn test_cli_parse_get_images_all_namespaces() {
     assert!(pod.is_none());
     assert!(registry.is_none());
     assert!(all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
 }
 
 #[test]
@@ -65,12 +75,13 @@ fn test_cli_parse_get_images_all_namespaces_short() {
     // Test the short flag version (-A)
     let args = Args::parse_from(["kelper", "get", "images", "-A"]);
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -78,6 +89,7 @@ fn test_cli_parse_get_images_all_namespaces_short() {
     assert!(pod.is_none());
     assert!(registry.is_none());
     assert!(all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
 }
 
 #[test]
@@ -85,12 +97,13 @@ fn test_cli_parse_get_images_node() {
     // Test combining node filter
     let args = Args::parse_from(["kelper", "get", "images", "--node", "worker1"]);
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -98,6 +111,7 @@ fn test_cli_parse_get_images_node() {
     assert!(pod.is_none());
     assert!(registry.is_none());
     assert!(!all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
 }
 
 #[test]
@@ -112,12 +126,13 @@ fn test_cli_parse_get_images_pod_and_all_namespaces() {
         "--all-namespaces",
     ]);
     let Commands::Get { resource } = args.command;
-    let GetResource::Images {
+    let GetImages::Images {
         namespace,
         node,
         pod,
         registry,
         all_namespaces,
+        output,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -125,6 +140,61 @@ fn test_cli_parse_get_images_pod_and_all_namespaces() {
     assert_eq!(pod, Some("nginx-pod".to_string()));
     assert!(registry.is_none());
     assert!(all_namespaces);
+    assert_eq!(output, OutputFormat::Normal);
+}
+
+#[test]
+fn test_cli_parse_get_images_wide_output() {
+    // Test wide output format
+    let args = Args::parse_from(["kelper", "get", "images", "-o", "wide"]);
+    let Commands::Get { resource } = args.command;
+    let GetImages::Images {
+        namespace,
+        node,
+        pod,
+        registry,
+        all_namespaces,
+        output,
+    } = resource;
+
+    assert_eq!(namespace, "default");
+    assert!(node.is_none());
+    assert!(pod.is_none());
+    assert!(registry.is_none());
+    assert!(!all_namespaces);
+    assert_eq!(output, OutputFormat::Wide);
+}
+
+#[test]
+fn test_cli_parse_get_images_wide_output_long() {
+    // Test wide output format with long flag
+    let args = Args::parse_from(["kelper", "get", "images", "--output", "wide"]);
+    let Commands::Get { resource } = args.command;
+    let GetImages::Images {
+        namespace,
+        node,
+        pod,
+        registry,
+        all_namespaces,
+        output,
+    } = resource;
+
+    assert_eq!(namespace, "default");
+    assert!(node.is_none());
+    assert!(pod.is_none());
+    assert!(registry.is_none());
+    assert!(!all_namespaces);
+    assert_eq!(output, OutputFormat::Wide);
+}
+
+#[test]
+fn test_cli_parse_get_images_invalid_output() {
+    // Test invalid output format
+    let result = Args::try_parse_from(["kelper", "get", "images", "-o", "invalid"]);
+    assert!(
+        result.is_err(),
+        "Expected parser to reject invalid output format"
+    );
 }
 
 #[test]

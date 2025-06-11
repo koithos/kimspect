@@ -1,15 +1,7 @@
+use crate::cli::formats::LogFormat;
 use std::error::Error;
 use tracing::Level;
 use tracing_subscriber::{fmt::time::ChronoUtc, prelude::*, EnvFilter};
-
-/// Logging format options
-#[derive(Debug, Clone, Copy)]
-pub enum LogFormat {
-    /// Plain text format, better for local development
-    Plain,
-    /// JSON format, better for production and machine parsing
-    Json,
-}
 
 /// Initialize the structured logging system with configurable formatting
 pub fn init_logging(level: Level, format: LogFormat) -> Result<(), Box<dyn Error>> {

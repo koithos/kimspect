@@ -1,3 +1,4 @@
+use crate::cli::formats::OutputFormat;
 use crate::k8s::PodImage;
 use prettytable::Table;
 use tracing::warn;
@@ -18,40 +19,38 @@ pub const KNOWN_REGISTRIES: [&str; 11] = [
     "pkg.dev",
 ];
 
-pub fn display_pod_images(
-    images: &[PodImage],
-    show_node: bool,
-    show_namespace: bool,
-    show_pod: bool,
-) {
+pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) {
     if images.is_empty() {
         warn!("No images found matching criteria");
         return;
     }
 
     let mut table = Table::new();
-    // Set format to remove borders
-    table.set_format(*prettytable::format::consts::FORMAT_CLEAN);
+    // Set format to remove borders and extra spacing
+    let format = prettytable::format::FormatBuilder::new()
+        .column_separator(' ')
+        .separator(
+            prettytable::format::LinePosition::Title,
+            prettytable::format::LineSeparator::new('-', '-', '-', '-'),
+        )
+        .padding(0, 1)
+        .build();
+    table.set_format(format);
 
     let mut header_cells = Vec::new();
 
-    if show_node {
+    header_cells.push("POD");
+    header_cells.push("NAMESPACE");
+    header_cells.push("CONTAINER");
+    if matches!(output_format, OutputFormat::Wide) {
+        header_cells.push("REGISTRY");
+    }
+    header_cells.push("IMAGE");
+    header_cells.push("VERSION");
+    if matches!(output_format, OutputFormat::Wide) {
+        header_cells.push("DIGEST");
         header_cells.push("NODE");
     }
-    if show_namespace {
-        header_cells.push("NAMESPACE");
-    }
-    if show_pod {
-        header_cells.push("POD NAME");
-    }
-
-    header_cells.extend(vec![
-        "CONTAINER",
-        "REGISTRY",
-        "IMAGE NAME",
-        "VERSION",
-        "DIGEST",
-    ]);
 
     let header_row = header_cells.into_iter().collect::<Vec<_>>();
     table.add_row(prettytable::Row::new(
@@ -61,21 +60,18 @@ pub fn display_pod_images(
     for image in images {
         let mut row = prettytable::Row::new(Vec::new());
 
-        if show_node {
-            row.add_cell(prettytable::Cell::new(&image.node_name));
-        }
-        if show_namespace {
-            row.add_cell(prettytable::Cell::new(&image.namespace));
-        }
-        if show_pod {
-            row.add_cell(prettytable::Cell::new(&image.pod_name));
-        }
-
+        row.add_cell(prettytable::Cell::new(&image.pod_name));
+        row.add_cell(prettytable::Cell::new(&image.namespace));
         row.add_cell(prettytable::Cell::new(&image.container_name));
-        row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        if matches!(output_format, OutputFormat::Wide) {
+            row.add_cell(prettytable::Cell::new(&image.registry).style_spec("Fy"));
+        }
         row.add_cell(prettytable::Cell::new(&image.image_name));
         row.add_cell(prettytable::Cell::new(&image.image_version));
-        row.add_cell(prettytable::Cell::new(&image.digest));
+        if matches!(output_format, OutputFormat::Wide) {
+            row.add_cell(prettytable::Cell::new(&image.digest));
+            row.add_cell(prettytable::Cell::new(&image.node_name));
+        }
 
         table.add_row(row);
     }
