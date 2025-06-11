@@ -1,4 +1,4 @@
-use crate::utils::enums::{Commands, LogFormat};
+use crate::cli::{Commands, LogFormat};
 use clap::Parser;
 
 #[derive(Parser, Debug)]

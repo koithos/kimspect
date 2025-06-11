@@ -1,13 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
 use kelper::{
-    cli::Args,
+    cli::{Args, Commands, GetImages},
     k8s::K8sClient,
-    utils::{
-        display_pod_images,
-        enums::{Commands, GetImages},
-        logging,
-    },
+    utils::{display_pod_images, logging},
 };
 use tracing::{debug, error, info, warn};
 
