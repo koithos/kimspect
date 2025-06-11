@@ -94,12 +94,13 @@ kelper get images -vvv --log-format json
 Kelper displays information in a clean tabular format:
 
 ```
- NODE                       POD NAME                           CONTAINER       REGISTRY         IMAGE NAME                     VERSION      DIGEST
- multi-node-cluster-worker  metrics-server-8664d5f5f7-krxm6    linkerd-proxy   cr.l5d.io        linkerd/proxy                  edge-25.3.3  496429c2a4a430d7acb4393d01c4d5971a8e3e385e5f47ceaac29dde009e7189
- multi-node-cluster-worker  metrics-server-8664d5f5f7-krxm6    metrics-server  registry.k8s.io  metrics-server/metrics-server  v0.7.2       ffcb2bf004d6aa0a17d90e0247cf94f2865c8901dcab4427034c341951c239f9
- multi-node-cluster-worker  ollama-model-phi-6b7b67778d-np2tx  linkerd-proxy   cr.l5d.io        linkerd/proxy                  edge-25.3.3  496429c2a4a430d7acb4393d01c4d5971a8e3e385e5f47ceaac29dde009e7189
- multi-node-cluster-worker  ollama-model-phi-6b7b67778d-np2tx  server          docker.io        ollama/ollama                  latest       e2c9ab127d555aa671d06d2a48ab58a2e544bbdaf6fa93313dbb4fb8bb73867c
- multi-node-cluster-worker  ollama-models-store-0              server          docker.io        ollama/ollama                  latest       e2c9ab127d555aa671d06d2a48ab58a2e544bbdaf6fa93313dbb4fb8bb73867c
+kelper get images -o wide
+POD                                NAMESPACE  CONTAINER       REGISTRY         IMAGE                          VERSION      DIGEST                                                            NODE
+metrics-server-8664d5f5f7-krxm6    default    linkerd-proxy   cr.l5d.io        linkerd/proxy                  edge-25.3.3  496429c2a4a430d7acb4393d01c4d5971a8e3e385e5f47ceaac29dde009e7189  multi-node-cluster-worker
+metrics-server-8664d5f5f7-krxm6    default    metrics-server  registry.k8s.io  metrics-server/metrics-server  v0.7.2       ffcb2bf004d6aa0a17d90e0247cf94f2865c8901dcab4427034c341951c239f9  multi-node-cluster-worker
+ollama-model-phi-6b7b67778d-np2tx  default    linkerd-proxy   cr.l5d.io        linkerd/proxy                  edge-25.3.3  496429c2a4a430d7acb4393d01c4d5971a8e3e385e5f47ceaac29dde009e7189  multi-node-cluster-worker
+ollama-model-phi-6b7b67778d-np2tx  default    server          docker.io        ollama/ollama                  latest       e2c9ab127d555aa671d06d2a48ab58a2e544bbdaf6fa93313dbb4fb8bb73867c  multi-node-cluster-worker
+ollama-models-store-0              default    server          docker.io        ollama/ollama                  latest       e2c9ab127d555aa671d06d2a48ab58a2e544bbdaf6fa93313dbb4fb8bb73867c  multi-node-cluster-worker
 ```
 
 ## Development
