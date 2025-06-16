@@ -12,11 +12,30 @@ async fn test_k8s_client_creation() -> Result<()> {
 async fn test_get_pod_images() -> Result<()> {
     let client = K8sClient::new().await?;
     // Updated to include the new all_namespaces parameter
-    let _images = client
+    let result = client
         .get_pod_images("default", None, None, None, false)
-        .await?;
-    // We can't assert specific values here as they depend on the cluster state
-    // but we can verify the function doesn't panic
+        .await;
+
+    // In CI environments, there might not be any pods in the default namespace
+    // So we should accept both successful empty results and ResourceNotFound errors
+    match result {
+        Ok(images) => {
+            // If we get images, verify they're valid
+            for image in images {
+                assert!(!image.pod_name.is_empty());
+                assert!(!image.namespace.is_empty());
+                assert!(!image.container_name.is_empty());
+                assert!(!image.image_name.is_empty());
+            }
+        }
+        Err(e) => {
+            // If we get an error, it should be a ResourceNotFound error
+            assert!(matches!(
+                e.downcast_ref::<K8sError>(),
+                Some(K8sError::ResourceNotFound(_))
+            ));
+        }
+    }
     Ok(())
 }
 
