@@ -2,17 +2,18 @@ use crate::cli::formats::OutputFormat;
 use clap::Subcommand;
 use std::path::PathBuf;
 
-/// CLI command structure
+/// CLI command structure for Kelper
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Get information about Kubernetes resources
     Get {
+        /// The resource type to query
         #[command(subcommand)]
         resource: GetImages,
     },
 }
 
-/// Resource types that can be queried
+/// Resource types that can be queried in the Kubernetes cluster
 #[derive(Subcommand, Debug)]
 pub enum GetImages {
     /// List pod images and their registries
@@ -54,6 +55,10 @@ pub enum GetImages {
 
 impl GetImages {
     /// Get the kubeconfig path for this command
+    ///
+    /// # Returns
+    ///
+    /// * `Option<PathBuf>` - The path to the kubeconfig file if specified
     pub fn get_kubeconfig_path(&self) -> Option<PathBuf> {
         match self {
             GetImages::Images { kubeconfig, .. } => kubeconfig.clone(),
@@ -61,6 +66,10 @@ impl GetImages {
     }
 
     /// Get the namespace for this command
+    ///
+    /// # Returns
+    ///
+    /// * `&str` - The namespace to query
     pub fn get_namespace(&self) -> &str {
         match self {
             GetImages::Images { namespace, .. } => namespace,
@@ -68,6 +77,10 @@ impl GetImages {
     }
 
     /// Check if this command should query all namespaces
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - True if all namespaces should be queried
     pub fn is_all_namespaces(&self) -> bool {
         match self {
             GetImages::Images { all_namespaces, .. } => *all_namespaces,

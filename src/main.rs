@@ -1,10 +1,11 @@
-use anyhow::{Context, Result};
+use anyhow::Context;
 use clap::Parser;
-use kelper::{display_pod_images, logging, Args, Commands, GetImages, K8sClient};
+use kelper::{display_pod_images, logging, Args, Commands, GetImages, K8sClient, KelperResult};
 use tracing::{debug, info, instrument, warn};
 
+/// Main entry point for the Kelper application
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> KelperResult<()> {
     let args = Args::parse();
 
     // Initialize logging with the specified format
@@ -26,8 +27,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Process the command line arguments and execute the corresponding command
 #[instrument(skip(client), level = "debug")]
-async fn process_commands(args: Args, client: K8sClient) -> Result<()> {
+async fn process_commands(args: Args, client: K8sClient) -> KelperResult<()> {
     match args.command {
         Commands::Get { resource } => match resource {
             GetImages::Images {

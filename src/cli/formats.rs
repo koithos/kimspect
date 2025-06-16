@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use std::fmt;
 
-/// Logging format options
+/// Logging format options for Kelper
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum LogFormat {
     /// Plain text format, better for local development
@@ -19,7 +19,7 @@ impl fmt::Display for LogFormat {
     }
 }
 
-/// Output format options for displaying data
+/// Output format options for displaying Kubernetes resource data
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum OutputFormat {
     /// Standard output format with essential columns
@@ -39,16 +39,28 @@ impl fmt::Display for OutputFormat {
 
 impl OutputFormat {
     /// Check if this format includes registry information
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - True if the format includes registry information
     pub fn includes_registry(&self) -> bool {
         matches!(self, OutputFormat::Wide)
     }
 
     /// Check if this format includes digest information
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - True if the format includes digest information
     pub fn includes_digest(&self) -> bool {
         matches!(self, OutputFormat::Wide)
     }
 
     /// Check if this format includes node information
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - True if the format includes node information
     pub fn includes_node(&self) -> bool {
         matches!(self, OutputFormat::Wide)
     }

@@ -3,6 +3,7 @@ use crate::cli::Commands;
 use clap::Parser;
 use std::path::PathBuf;
 
+/// Command line arguments for the Kelper application
 #[derive(Parser, Debug)]
 #[command(
     author,
@@ -32,12 +33,17 @@ pub struct Args {
     )]
     pub log_format: LogFormat,
 
+    /// The command to execute
     #[command(subcommand)]
     pub command: Commands,
 }
 
 impl Args {
     /// Get the kubeconfig path, respecting the command line argument or falling back to environment variable
+    ///
+    /// # Returns
+    ///
+    /// * `Option<PathBuf>` - The path to the kubeconfig file if specified via command line or environment variable
     pub fn get_kubeconfig_path(&self) -> Option<PathBuf> {
         self.kubeconfig
             .clone()

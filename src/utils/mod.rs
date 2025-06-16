@@ -5,6 +5,7 @@ use tracing::warn;
 
 pub mod logging;
 
+/// List of known container image registries
 pub const KNOWN_REGISTRIES: [&str; 11] = [
     "docker.io",
     "registry.hub.docker.com",
@@ -19,8 +20,10 @@ pub const KNOWN_REGISTRIES: [&str; 11] = [
     "pkg.dev",
 ];
 
+/// Error type for table display operations
 #[derive(Debug)]
 pub struct TableDisplayError {
+    /// Error message describing what went wrong
     message: String,
 }
 
@@ -32,6 +35,16 @@ impl std::fmt::Display for TableDisplayError {
     }
 }
 
+/// Display pod images in a formatted table
+///
+/// # Arguments
+///
+/// * `images` - List of pod images to display
+/// * `output_format` - Format to use for displaying the images
+///
+/// # Returns
+///
+/// * `Result<()>` - Success or error
 pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) -> Result<()> {
     if images.is_empty() {
         warn!("No images found matching criteria");
@@ -51,6 +64,11 @@ pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) -> 
     Ok(())
 }
 
+/// Create a new table with default formatting
+///
+/// # Returns
+///
+/// * `Result<Table>` - A new table instance or error
 fn create_table() -> Result<Table> {
     let format = FormatBuilder::new()
         .column_separator(' ')
@@ -66,6 +84,15 @@ fn create_table() -> Result<Table> {
     Ok(table)
 }
 
+/// Create a header row for the table based on output format
+///
+/// # Arguments
+///
+/// * `output_format` - Format to use for displaying the images
+///
+/// # Returns
+///
+/// * `Row` - A row containing the table headers
 fn create_header_row(output_format: &OutputFormat) -> Row {
     let mut header_cells = vec![
         Cell::new("POD"),
@@ -86,6 +113,16 @@ fn create_header_row(output_format: &OutputFormat) -> Row {
     Row::new(header_cells)
 }
 
+/// Create a row for a single pod image
+///
+/// # Arguments
+///
+/// * `image` - The pod image to create a row for
+/// * `output_format` - Format to use for displaying the image
+///
+/// # Returns
+///
+/// * `Result<Row>` - A row containing the image information or error
 fn create_image_row(image: &PodImage, output_format: &OutputFormat) -> Result<Row> {
     let mut cells = vec![
         Cell::new(&image.pod_name),
@@ -109,7 +146,7 @@ fn create_image_row(image: &PodImage, output_format: &OutputFormat) -> Result<Ro
     Ok(Row::new(cells))
 }
 
-/// Strips the registry prefix from an image name if it exists.
+/// Strips the registry prefix from an image name if it exists
 ///
 /// # Arguments
 ///
