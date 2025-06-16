@@ -437,6 +437,11 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
     let namespace = pod.metadata.namespace.clone().unwrap_or_default();
+    let node_name = pod
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.node_name.clone())
+        .unwrap_or_default();
 
     if let Some(spec) = &pod.spec {
         let containers = &spec.containers;
@@ -453,7 +458,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     container_name: container.name.clone(),
                     image_name,
                     image_version,
-                    node_name: spec.node_name.clone().unwrap_or_default(),
+                    node_name: node_name.clone(),
                     registry,
                     digest,
                 });
