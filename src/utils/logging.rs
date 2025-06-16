@@ -1,16 +1,28 @@
 use crate::LogFormat;
-use std::error::Error;
+use anyhow::{Context, Result};
 use tracing::Level;
 use tracing_subscriber::{fmt::time::ChronoUtc, prelude::*, EnvFilter};
 
 /// Initialize the structured logging system with configurable formatting
-pub fn init_logging(level: Level, format: LogFormat) -> Result<(), Box<dyn Error>> {
+pub fn init_logging(level: Level, format: LogFormat) -> Result<()> {
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(format!("{}", level)))
-        .unwrap()
-        .add_directive("rustls=ERROR".parse().unwrap()) // Only show errors from rustls
-        .add_directive("rustls::client=ERROR".parse().unwrap()) // Specifically filter client logs
-        .add_directive("rustls::client::tls13=ERROR".parse().unwrap()); // Filter TLS 1.3 specific logs
+        .context("Failed to create environment filter")?
+        .add_directive(
+            "rustls=ERROR"
+                .parse()
+                .context("Failed to parse rustls directive")?,
+        )
+        .add_directive(
+            "rustls::client=ERROR"
+                .parse()
+                .context("Failed to parse rustls client directive")?,
+        )
+        .add_directive(
+            "rustls::client::tls13=ERROR"
+                .parse()
+                .context("Failed to parse rustls tls13 directive")?,
+        );
 
     match format {
         LogFormat::Json => {

@@ -1,10 +1,10 @@
 use anyhow::Result;
-use kelper::K8sClient;
+use kelper::{K8sClient, K8sError};
 
 #[tokio::test]
 async fn test_k8s_client_creation() -> Result<()> {
     let client = K8sClient::new().await?;
-    assert!(client.is_initialized().await?);
+    assert!(client.is_accessible().await?);
     Ok(())
 }
 
@@ -23,12 +23,11 @@ async fn test_get_pod_images() -> Result<()> {
 #[tokio::test]
 async fn test_get_pod_images_with_node() -> Result<()> {
     let client = K8sClient::new().await?;
-    // Updated to include the new all_namespaces parameter
-    let _images = client
-        .get_pod_images("default", Some("node-name"), None, None, false)
-        .await?;
-    // We can't assert specific values here as they depend on the cluster state
-    // but we can verify the function doesn't panic
+    // Test that we get a ResourceNotFound error when querying a non-existent node
+    let result = client
+        .get_pod_images("default", Some("non-existent-node"), None, None, false)
+        .await;
+    assert!(matches!(result, Err(e) if e.downcast_ref::<K8sError>().is_some()));
     Ok(())
 }
 
@@ -47,21 +46,21 @@ async fn test_get_pod_images_all_namespaces() -> Result<()> {
 #[tokio::test]
 async fn test_get_pod_images_with_node_and_all_namespaces() -> Result<()> {
     let client = K8sClient::new().await?;
-    // Test combination of node filter and all_namespaces
-    let _images = client
-        .get_pod_images("default", Some("node-name"), None, None, true)
-        .await?;
-    // Verify the function doesn't panic
+    // Test that we get a ResourceNotFound error when querying a non-existent node across all namespaces
+    let result = client
+        .get_pod_images("default", Some("non-existent-node"), None, None, true)
+        .await;
+    assert!(matches!(result, Err(e) if e.downcast_ref::<K8sError>().is_some()));
     Ok(())
 }
 
 #[tokio::test]
 async fn test_get_pod_images_with_pod_and_all_namespaces() -> Result<()> {
     let client = K8sClient::new().await?;
-    // Test combination of pod filter and all_namespaces
-    let _images = client
-        .get_pod_images("default", None, Some("pod-name"), None, true)
-        .await?;
-    // Verify the function doesn't panic
+    // Test that we get a ResourceNotFound error when querying a non-existent pod across all namespaces
+    let result = client
+        .get_pod_images("default", None, Some("non-existent-pod"), None, true)
+        .await;
+    assert!(matches!(result, Err(e) if e.downcast_ref::<K8sError>().is_some()));
     Ok(())
 }

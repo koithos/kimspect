@@ -1,45 +1,35 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use kelper::{display_pod_images, logging, Args, Commands, GetImages, K8sClient};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, instrument, warn};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Initialize logging with the specified format
-    logging::init_logging(logging::configure_logging(args.verbose), args.log_format).unwrap();
+    logging::init_logging(logging::configure_logging(args.verbose), args.log_format)
+        .context("Failed to initialize logging")?;
+
     debug!("Application started with args: {:?}", args);
 
-    // Try to create the client first with better error handling
-    let client = match K8sClient::new().await {
-        Ok(client) => {
-            info!("Successfully connected to Kubernetes cluster");
-            client
-        }
-        Err(e) => {
-            error!(error = %e, "Failed to connect to Kubernetes cluster");
+    // Create the client with improved error context
+    let client = K8sClient::new()
+        .await
+        .context("Failed to create Kubernetes client")?;
 
-            // Provide helpful troubleshooting tips based on the error
-            if e.to_string().contains("No kubeconfig found") {
-                warn!("No kubeconfig found. Troubleshooting tips:");
-                info!(" - Ensure kubectl is configured on your machine");
-                info!(" - Run 'kubectl config view' to check your configuration");
-                info!(" - Set KUBECONFIG environment variable if using a non-default config");
-            } else if e.to_string().contains("not accessible") {
-                warn!("Cluster not accessible. Troubleshooting tips:");
-                info!(" - Check if your cluster is running with 'kubectl cluster-info'");
-                info!(" - Verify your network connection to the cluster");
-                info!(" - Check if your credentials are valid and not expired");
-                info!(" - Ensure your VPN is connected if accessing a remote cluster");
-            }
+    info!("Successfully connected to Kubernetes cluster");
 
-            std::process::exit(1);
-        }
-    };
+    process_commands(args, client).await?;
 
+    debug!("Application completed successfully");
+    Ok(())
+}
+
+#[instrument(skip(client), level = "debug")]
+async fn process_commands(args: Args, client: K8sClient) -> Result<()> {
     match args.command {
-        Commands::Get { resource, .. } => match resource {
+        Commands::Get { resource } => match resource {
             GetImages::Images {
                 namespace,
                 node,
@@ -47,6 +37,7 @@ async fn main() -> Result<()> {
                 registry,
                 all_namespaces,
                 output,
+                ..
             } => {
                 debug!(
                     namespace = %namespace,
@@ -58,7 +49,7 @@ async fn main() -> Result<()> {
                     "Processing get images command"
                 );
 
-                match client
+                let pod_images = client
                     .get_pod_images(
                         &namespace,
                         node.as_deref(),
@@ -67,32 +58,21 @@ async fn main() -> Result<()> {
                         all_namespaces,
                     )
                     .await
-                {
-                    Ok(pod_images) => {
-                        if pod_images.is_empty() {
-                            warn!("No pod images found matching your criteria");
-                        } else {
-                            debug!(
-                                output = ?output,
-                                "Displaying pod images"
-                            );
+                    .context("Failed to retrieve pod images")?;
 
-                            display_pod_images(&pod_images, &output);
-                            info!(
-                                count = pod_images.len(),
-                                "Successfully displayed pod images"
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        error!(error = %e, "Failed to retrieve pod images");
-                        std::process::exit(1);
-                    }
+                if pod_images.is_empty() {
+                    warn!("No pod images found matching your criteria");
+                } else {
+                    debug!(output = ?output, "Displaying pod images");
+                    display_pod_images(&pod_images, &output)
+                        .context("Failed to display pod images")?;
+                    info!(
+                        count = pod_images.len(),
+                        "Successfully displayed pod images"
+                    );
                 }
             }
         },
     }
-
-    debug!("Application completed successfully");
     Ok(())
 }

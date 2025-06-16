@@ -1,10 +1,11 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
+use std::fmt;
 use tracing::{debug, error, info, instrument};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PodImage {
     pub pod_name: String,
     pub node_name: String,
@@ -16,6 +17,27 @@ pub struct PodImage {
     pub digest: String,
 }
 
+#[derive(Debug)]
+pub enum K8sError {
+    ConfigError(String),
+    ConnectionError(String),
+    ApiError(String),
+    ResourceNotFound(String),
+}
+
+impl std::error::Error for K8sError {}
+
+impl fmt::Display for K8sError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            K8sError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+            K8sError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
+            K8sError::ApiError(msg) => write!(f, "API error: {}", msg),
+            K8sError::ResourceNotFound(msg) => write!(f, "Resource not found: {}", msg),
+        }
+    }
+}
+
 pub struct K8sClient {
     client: Client,
 }
@@ -25,92 +47,72 @@ impl K8sClient {
     pub async fn new() -> Result<Self> {
         debug!("Initializing Kubernetes client");
 
-        // Check if KUBECONFIG environment variable is set
-        if std::env::var("KUBECONFIG").is_err() {
-            debug!("KUBECONFIG not set, checking default location");
-            // Check for default kubeconfig location
-            let home_dir = std::env::var("HOME").unwrap_or_else(|_| String::from(""));
-            let default_kubeconfig = format!("{}/.kube/config", home_dir);
+        let kubeconfig_path = Self::get_kubeconfig_path()?;
+        debug!(path = %kubeconfig_path, "Using kubeconfig path");
 
-            if !std::path::Path::new(&default_kubeconfig).exists() {
-                error!("No kubeconfig found at default location");
-                anyhow::bail!("No kubeconfig found. Make sure you have a valid kubeconfig at ~/.kube/config or set the KUBECONFIG environment variable.");
-            }
-            info!("Using default kubeconfig location");
-        } else {
-            info!("Using kubeconfig from KUBECONFIG environment variable");
-        }
+        let client = Client::try_default()
+            .await
+            .context("Failed to create Kubernetes client")?;
 
-        // If we get here, a kubeconfig likely exists, so we try to create the client
-        let client = match Client::try_default().await {
-            Ok(client) => client,
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::InferConfig(_) => {
-                        error!("Failed to infer cluster configuration");
-                        anyhow::bail!("Failed to infer cluster configuration. Please check your kubeconfig file.")
-                    }
-                    _ => {
-                        error!("Failed to create kube client");
-                        anyhow::bail!("Failed to create kube client. Please check your kubeconfig file and cluster connection.")
-                    }
-                }
-            }
-        };
-
-        // Create the client instance
         let k8s_client = Self { client };
 
         // Verify cluster accessibility
         if !k8s_client.is_accessible().await? {
-            error!("Failed to verify cluster accessibility");
-            anyhow::bail!("Kubernetes cluster is not accessible. Please check your connection and cluster status.");
+            return Err(
+                K8sError::ConnectionError("Kubernetes cluster is not accessible".into()).into(),
+            );
         }
 
         info!("Successfully initialized Kubernetes client");
         Ok(k8s_client)
     }
 
+    fn get_kubeconfig_path() -> Result<String> {
+        if let Ok(path) = std::env::var("KUBECONFIG") {
+            info!("Using kubeconfig from KUBECONFIG environment variable");
+            return Ok(path);
+        }
+
+        debug!("KUBECONFIG not set, checking default location");
+        let home_dir = std::env::var("HOME").context("Failed to get HOME directory")?;
+        let default_kubeconfig = format!("{}/.kube/config", home_dir);
+
+        if !std::path::Path::new(&default_kubeconfig).exists() {
+            return Err(
+                K8sError::ConfigError("No kubeconfig found at default location".into()).into(),
+            );
+        }
+
+        info!("Using default kubeconfig location");
+        Ok(default_kubeconfig)
+    }
+
     #[instrument(skip(self))]
     pub async fn is_accessible(&self) -> Result<bool> {
         debug!("Checking cluster accessibility");
-        // Try to access the API server by making a simple request
         let api: Api<Pod> = Api::namespaced(self.client.clone(), "default");
 
-        // We're just checking if we can connect, not if there are pods
         match api.list(&Default::default()).await {
             Ok(_) => {
                 debug!("Successfully connected to cluster");
                 Ok(true)
             }
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::Api(api_err) => {
-                        error!("Kubernetes API error occurred");
-                        anyhow::bail!(
-                            "Kubernetes API error: {} ({})",
-                            api_err.message,
-                            api_err.reason
-                        )
-                    }
-                    _ => {
-                        error!("Failed to connect to Kubernetes cluster");
-                        anyhow::bail!("Failed to connect to Kubernetes cluster. Please check your connection and cluster status.")
-                    }
+            Err(e) => match e {
+                kube::Error::Api(api_err) => {
+                    error!("Kubernetes API error occurred");
+                    Err(
+                        K8sError::ApiError(format!("{} ({})", api_err.message, api_err.reason))
+                            .into(),
+                    )
                 }
-            }
-        }
-    }
-
-    #[instrument(skip(self))]
-    pub async fn is_initialized(&self) -> Result<bool> {
-        // Try to list pods in the default namespace to verify client is working
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), "default");
-        match pods.list(&Default::default()).await {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
+                _ => {
+                    error!("Failed to connect to Kubernetes cluster");
+                    Err(
+                        K8sError::ConnectionError("Failed to connect to Kubernetes cluster".into())
+                            .into(),
+                    )
+                }
+            },
         }
     }
 
@@ -138,73 +140,30 @@ impl K8sClient {
             "Fetching pod images"
         );
 
-        let mut field_selectors = String::new();
+        let list_params = Self::build_list_params(node_name, pod_name);
+        let pods = self.get_pods_api(namespace, all_namespaces, node_name)?;
 
-        if let Some(node) = node_name {
-            field_selectors.push_str(&format!("spec.nodeName={}", node));
-        }
-
-        if let Some(name) = pod_name {
-            if !field_selectors.is_empty() {
-                field_selectors.push(',');
-            }
-            field_selectors.push_str(&format!("metadata.name={}", name));
-        }
-
-        let list_params = if !field_selectors.is_empty() {
-            ListParams::default().fields(&field_selectors)
-        } else {
-            ListParams::default()
-        };
-
-        let pods: Api<Pod> = if all_namespaces || node_name.is_some() {
-            debug!("Querying pods across all namespaces");
-            Api::all(self.client.clone())
-        } else {
-            debug!("Querying pods in namespace: {}", namespace);
-            Api::namespaced(self.client.clone(), namespace)
-        };
-
-        let pods_list = match pods.list(&list_params).await {
-            Ok(list) => list,
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::Api(api_err) => {
-                        error!("Kubernetes API error occurred");
-                        anyhow::bail!(
-                            "Kubernetes API error: {} ({})",
-                            api_err.message,
-                            api_err.reason
-                        )
-                    }
-                    _ => {
-                        error!("Failed to list pods");
-                        anyhow::bail!(
-                            "Failed to list pods. Please check your connection and cluster status."
-                        )
-                    }
-                }
-            }
-        };
+        let pods_list = pods
+            .list(&list_params)
+            .await
+            .context("Failed to list pods")?;
 
         debug!("Found {} pods", pods_list.items.len());
 
+        if pods_list.items.is_empty() {
+            let resource = match (node_name, pod_name) {
+                (Some(node), Some(pod)) => format!("pod {} on node {}", pod, node),
+                (Some(node), None) => format!("pods on node {}", node),
+                (None, Some(pod)) => format!("pod {}", pod),
+                (None, None) => format!("pods in namespace {}", namespace),
+            };
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
         let mut all_images = Vec::new();
         for pod in pods_list {
-            // Perform client-side filtering for pod name when querying cluster-wide.
-            if let (true, Some(name_filter)) = ((all_namespaces || node_name.is_some()), pod_name) {
-                match &pod.metadata.name {
-                    Some(p_name) if p_name != name_filter => {
-                        debug!("Skipping pod (doesn't match filter)");
-                        continue;
-                    }
-                    None => {
-                        debug!("Skipping pod without name");
-                        continue;
-                    }
-                    _ => {}
-                }
+            if !Self::should_process_pod(&pod, all_namespaces, node_name, pod_name) {
+                continue;
             }
 
             let pod_images = process_pod(&pod);
@@ -227,6 +186,65 @@ impl K8sClient {
             "Successfully retrieved pod images"
         );
         Ok(all_images)
+    }
+
+    fn build_list_params(node_name: Option<&str>, pod_name: Option<&str>) -> ListParams {
+        let mut field_selectors = Vec::new();
+
+        if let Some(node) = node_name {
+            field_selectors.push(format!("spec.nodeName={}", node));
+        }
+
+        if let Some(name) = pod_name {
+            field_selectors.push(format!("metadata.name={}", name));
+        }
+
+        if field_selectors.is_empty() {
+            ListParams::default()
+        } else {
+            ListParams::default().fields(&field_selectors.join(","))
+        }
+    }
+
+    fn get_pods_api(
+        &self,
+        namespace: &str,
+        all_namespaces: bool,
+        node_name: Option<&str>,
+    ) -> Result<Api<Pod>> {
+        Ok(if all_namespaces || node_name.is_some() {
+            debug!("Querying pods across all namespaces");
+            Api::all(self.client.clone())
+        } else {
+            debug!("Querying pods in namespace: {}", namespace);
+            Api::namespaced(self.client.clone(), namespace)
+        })
+    }
+
+    fn should_process_pod(
+        pod: &Pod,
+        all_namespaces: bool,
+        node_name: Option<&str>,
+        pod_name: Option<&str>,
+    ) -> bool {
+        if !(all_namespaces || node_name.is_some()) {
+            return true;
+        }
+
+        if let Some(name_filter) = pod_name {
+            match &pod.metadata.name {
+                Some(p_name) if p_name != name_filter => {
+                    debug!("Skipping pod (doesn't match filter)");
+                    return false;
+                }
+                None => {
+                    debug!("Skipping pod without name");
+                    return false;
+                }
+                _ => {}
+            }
+        }
+        true
     }
 }
 

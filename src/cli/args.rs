@@ -1,10 +1,20 @@
 use crate::cli::formats::LogFormat;
 use crate::cli::Commands;
 use clap::Parser;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(
+    author,
+    version,
+    about = "A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes",
+    long_about = None
+)]
 pub struct Args {
+    /// Path to kubeconfig file (default: ~/.kube/config)
+    #[arg(long = "kubeconfig", global = true)]
+    pub kubeconfig: Option<PathBuf>,
+
     /// Enable verbose logging. Use multiple v's for increased verbosity:
     /// -v: WARN level
     /// -vv: INFO level
@@ -24,4 +34,13 @@ pub struct Args {
 
     #[command(subcommand)]
     pub command: Commands,
+}
+
+impl Args {
+    /// Get the kubeconfig path, respecting the command line argument or falling back to environment variable
+    pub fn get_kubeconfig_path(&self) -> Option<PathBuf> {
+        self.kubeconfig
+            .clone()
+            .or_else(|| std::env::var("KUBECONFIG").ok().map(PathBuf::from))
+    }
 }

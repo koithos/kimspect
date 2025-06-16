@@ -13,6 +13,7 @@ fn test_cli_parse_get_images_default() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -34,6 +35,7 @@ fn test_cli_parse_get_images_namespace() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "test-ns");
@@ -55,6 +57,7 @@ fn test_cli_parse_get_images_all_namespaces() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     // namespace should still be default, but all_namespaces flag should be true
@@ -78,6 +81,7 @@ fn test_cli_parse_get_images_all_namespaces_short() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -100,6 +104,7 @@ fn test_cli_parse_get_images_node() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -129,6 +134,7 @@ fn test_cli_parse_get_images_pod_and_all_namespaces() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -151,6 +157,7 @@ fn test_cli_parse_get_images_wide_output() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
@@ -173,6 +180,7 @@ fn test_cli_parse_get_images_wide_output_long() {
         registry,
         all_namespaces,
         output,
+        kubeconfig: _,
     } = resource;
 
     assert_eq!(namespace, "default");
