@@ -20,6 +20,7 @@ colored = "3.0"
 prettytable-rs = "0.10"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter", "chrono"] }
+thiserror = "2.0.12"
 
 [dev-dependencies]
 tokio-test = "0.4"

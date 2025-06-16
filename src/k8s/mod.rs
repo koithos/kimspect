@@ -2,7 +2,7 @@ use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
-use std::fmt;
+use thiserror::Error;
 use tracing::{debug, error, info, instrument};
 
 /// Represents a container image running in a Kubernetes pod
@@ -27,29 +27,20 @@ pub struct PodImage {
 }
 
 /// Errors that can occur when interacting with Kubernetes
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum K8sError {
     /// Configuration-related errors
+    #[error("Configuration error: {0}")]
     ConfigError(String),
     /// Connection-related errors
+    #[error("Connection error: {0}")]
     ConnectionError(String),
     /// API-related errors
+    #[error("API error: {0}")]
     ApiError(String),
     /// Resource not found errors
+    #[error("Resource not found: {0}")]
     ResourceNotFound(String),
-}
-
-impl std::error::Error for K8sError {}
-
-impl fmt::Display for K8sError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            K8sError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            K8sError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
-            K8sError::ApiError(msg) => write!(f, "API error: {}", msg),
-            K8sError::ResourceNotFound(msg) => write!(f, "Resource not found: {}", msg),
-        }
-    }
 }
 
 /// Client for interacting with Kubernetes clusters
