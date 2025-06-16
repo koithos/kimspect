@@ -1,119 +1,156 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
+use thiserror::Error;
 use tracing::{debug, error, info, instrument};
 
-#[derive(Debug)]
+/// Represents a container image running in a Kubernetes pod
+#[derive(Debug, Clone)]
 pub struct PodImage {
+    /// Name of the pod containing the image
     pub pod_name: String,
+    /// Name of the node where the pod is running
     pub node_name: String,
+    /// Kubernetes namespace of the pod
     pub namespace: String,
+    /// Name of the container using this image
     pub container_name: String,
+    /// Name of the container image
     pub image_name: String,
+    /// Version/tag of the container image
     pub image_version: String,
+    /// Registry where the image is hosted
     pub registry: String,
+    /// Image digest (if available)
     pub digest: String,
 }
 
+/// Errors that can occur when interacting with Kubernetes
+#[derive(Debug, Error)]
+pub enum K8sError {
+    /// Configuration-related errors
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    /// Connection-related errors
+    #[error("Connection error: {0}")]
+    ConnectionError(String),
+    /// API-related errors
+    #[error("API error: {0}")]
+    ApiError(String),
+    /// Resource not found errors
+    #[error("Resource not found: {0}")]
+    ResourceNotFound(String),
+}
+
+/// Client for interacting with Kubernetes clusters
 pub struct K8sClient {
+    /// The underlying Kubernetes client
     client: Client,
 }
 
 impl K8sClient {
+    /// Create a new Kubernetes client
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Self>` - A new K8sClient instance or an error if initialization fails
     #[instrument(skip_all)]
     pub async fn new() -> Result<Self> {
         debug!("Initializing Kubernetes client");
 
-        // Check if KUBECONFIG environment variable is set
-        if std::env::var("KUBECONFIG").is_err() {
-            debug!("KUBECONFIG not set, checking default location");
-            // Check for default kubeconfig location
-            let home_dir = std::env::var("HOME").unwrap_or_else(|_| String::from(""));
-            let default_kubeconfig = format!("{}/.kube/config", home_dir);
+        let kubeconfig_path = Self::get_kubeconfig_path()?;
+        debug!(path = %kubeconfig_path, "Using kubeconfig path");
 
-            if !std::path::Path::new(&default_kubeconfig).exists() {
-                error!("No kubeconfig found at default location");
-                anyhow::bail!("No kubeconfig found. Make sure you have a valid kubeconfig at ~/.kube/config or set the KUBECONFIG environment variable.");
-            }
-            info!("Using default kubeconfig location");
-        } else {
-            info!("Using kubeconfig from KUBECONFIG environment variable");
-        }
+        let client = Client::try_default()
+            .await
+            .context("Failed to create Kubernetes client")?;
 
-        // If we get here, a kubeconfig likely exists, so we try to create the client
-        let client = match Client::try_default().await {
-            Ok(client) => client,
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::InferConfig(_) => {
-                        error!("Failed to infer cluster configuration");
-                        anyhow::bail!("Failed to infer cluster configuration. Please check your kubeconfig file.")
-                    }
-                    _ => {
-                        error!("Failed to create kube client");
-                        anyhow::bail!("Failed to create kube client. Please check your kubeconfig file and cluster connection.")
-                    }
-                }
-            }
-        };
-
-        // Create the client instance
         let k8s_client = Self { client };
 
         // Verify cluster accessibility
         if !k8s_client.is_accessible().await? {
-            error!("Failed to verify cluster accessibility");
-            anyhow::bail!("Kubernetes cluster is not accessible. Please check your connection and cluster status.");
+            return Err(
+                K8sError::ConnectionError("Kubernetes cluster is not accessible".into()).into(),
+            );
         }
 
         info!("Successfully initialized Kubernetes client");
         Ok(k8s_client)
     }
 
+    /// Get the path to the kubeconfig file
+    ///
+    /// # Returns
+    ///
+    /// * `Result<String>` - The path to the kubeconfig file or an error if not found
+    fn get_kubeconfig_path() -> Result<String> {
+        if let Ok(path) = std::env::var("KUBECONFIG") {
+            info!("Using kubeconfig from KUBECONFIG environment variable");
+            return Ok(path);
+        }
+
+        debug!("KUBECONFIG not set, checking default location");
+        let home_dir = std::env::var("HOME").context("Failed to get HOME directory")?;
+        let default_kubeconfig = format!("{}/.kube/config", home_dir);
+
+        if !std::path::Path::new(&default_kubeconfig).exists() {
+            return Err(
+                K8sError::ConfigError("No kubeconfig found at default location".into()).into(),
+            );
+        }
+
+        info!("Using default kubeconfig location");
+        Ok(default_kubeconfig)
+    }
+
+    /// Check if the Kubernetes cluster is accessible
+    ///
+    /// # Returns
+    ///
+    /// * `Result<bool>` - True if the cluster is accessible, false otherwise
     #[instrument(skip(self))]
     pub async fn is_accessible(&self) -> Result<bool> {
         debug!("Checking cluster accessibility");
-        // Try to access the API server by making a simple request
         let api: Api<Pod> = Api::namespaced(self.client.clone(), "default");
 
-        // We're just checking if we can connect, not if there are pods
         match api.list(&Default::default()).await {
             Ok(_) => {
                 debug!("Successfully connected to cluster");
                 Ok(true)
             }
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::Api(api_err) => {
-                        error!("Kubernetes API error occurred");
-                        anyhow::bail!(
-                            "Kubernetes API error: {} ({})",
-                            api_err.message,
-                            api_err.reason
-                        )
-                    }
-                    _ => {
-                        error!("Failed to connect to Kubernetes cluster");
-                        anyhow::bail!("Failed to connect to Kubernetes cluster. Please check your connection and cluster status.")
-                    }
+            Err(e) => match e {
+                kube::Error::Api(api_err) => {
+                    error!("Kubernetes API error occurred");
+                    Err(
+                        K8sError::ApiError(format!("{} ({})", api_err.message, api_err.reason))
+                            .into(),
+                    )
                 }
-            }
+                _ => {
+                    error!("Failed to connect to Kubernetes cluster");
+                    Err(
+                        K8sError::ConnectionError("Failed to connect to Kubernetes cluster".into())
+                            .into(),
+                    )
+                }
+            },
         }
     }
 
-    #[instrument(skip(self))]
-    pub async fn is_initialized(&self) -> Result<bool> {
-        // Try to list pods in the default namespace to verify client is working
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), "default");
-        match pods.list(&Default::default()).await {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
-    }
-
+    /// Get pod images matching the specified criteria
+    ///
+    /// # Arguments
+    ///
+    /// * `namespace` - The namespace to search in
+    /// * `node_name` - Optional node name filter
+    /// * `pod_name` - Optional pod name filter
+    /// * `registry_filter` - Optional registry filter
+    /// * `all_namespaces` - Whether to search in all namespaces
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<PodImage>>` - List of matching pod images or an error
     #[instrument(skip(self), fields(
         namespace = %namespace,
         node = ?node_name,
@@ -138,73 +175,30 @@ impl K8sClient {
             "Fetching pod images"
         );
 
-        let mut field_selectors = String::new();
+        let list_params = Self::build_list_params(node_name, pod_name);
+        let pods = self.get_pods_api(namespace, all_namespaces, node_name)?;
 
-        if let Some(node) = node_name {
-            field_selectors.push_str(&format!("spec.nodeName={}", node));
-        }
-
-        if let Some(name) = pod_name {
-            if !field_selectors.is_empty() {
-                field_selectors.push(',');
-            }
-            field_selectors.push_str(&format!("metadata.name={}", name));
-        }
-
-        let list_params = if !field_selectors.is_empty() {
-            ListParams::default().fields(&field_selectors)
-        } else {
-            ListParams::default()
-        };
-
-        let pods: Api<Pod> = if all_namespaces || node_name.is_some() {
-            debug!("Querying pods across all namespaces");
-            Api::all(self.client.clone())
-        } else {
-            debug!("Querying pods in namespace: {}", namespace);
-            Api::namespaced(self.client.clone(), namespace)
-        };
-
-        let pods_list = match pods.list(&list_params).await {
-            Ok(list) => list,
-            Err(e) => {
-                // Handle specific error types without exposing sensitive information
-                match e {
-                    kube::Error::Api(api_err) => {
-                        error!("Kubernetes API error occurred");
-                        anyhow::bail!(
-                            "Kubernetes API error: {} ({})",
-                            api_err.message,
-                            api_err.reason
-                        )
-                    }
-                    _ => {
-                        error!("Failed to list pods");
-                        anyhow::bail!(
-                            "Failed to list pods. Please check your connection and cluster status."
-                        )
-                    }
-                }
-            }
-        };
+        let pods_list = pods
+            .list(&list_params)
+            .await
+            .context("Failed to list pods")?;
 
         debug!("Found {} pods", pods_list.items.len());
 
+        if pods_list.items.is_empty() {
+            let resource = match (node_name, pod_name) {
+                (Some(node), Some(pod)) => format!("pod {} on node {}", pod, node),
+                (Some(node), None) => format!("pods on node {}", node),
+                (None, Some(pod)) => format!("pod {}", pod),
+                (None, None) => format!("pods in namespace {}", namespace),
+            };
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
         let mut all_images = Vec::new();
         for pod in pods_list {
-            // Perform client-side filtering for pod name when querying cluster-wide.
-            if let (true, Some(name_filter)) = ((all_namespaces || node_name.is_some()), pod_name) {
-                match &pod.metadata.name {
-                    Some(p_name) if p_name != name_filter => {
-                        debug!("Skipping pod (doesn't match filter)");
-                        continue;
-                    }
-                    None => {
-                        debug!("Skipping pod without name");
-                        continue;
-                    }
-                    _ => {}
-                }
+            if !Self::should_process_pod(&pod, all_namespaces, node_name, pod_name) {
+                continue;
             }
 
             let pod_images = process_pod(&pod);
@@ -228,8 +222,69 @@ impl K8sClient {
         );
         Ok(all_images)
     }
+
+    /// Build list parameters for pod queries
+    fn build_list_params(node_name: Option<&str>, pod_name: Option<&str>) -> ListParams {
+        let mut field_selectors = Vec::new();
+
+        if let Some(node) = node_name {
+            field_selectors.push(format!("spec.nodeName={}", node));
+        }
+
+        if let Some(name) = pod_name {
+            field_selectors.push(format!("metadata.name={}", name));
+        }
+
+        ListParams::default().fields(&field_selectors.join(","))
+    }
+
+    /// Get the pods API for the specified namespace
+    fn get_pods_api(
+        &self,
+        namespace: &str,
+        all_namespaces: bool,
+        _node_name: Option<&str>,
+    ) -> Result<Api<Pod>> {
+        let api = if all_namespaces {
+            Api::all(self.client.clone())
+        } else {
+            Api::namespaced(self.client.clone(), namespace)
+        };
+        Ok(api)
+    }
+
+    /// Check if a pod should be processed based on filters
+    fn should_process_pod(
+        pod: &Pod,
+        _all_namespaces: bool,
+        node_name: Option<&str>,
+        pod_name: Option<&str>,
+    ) -> bool {
+        if let Some(name) = pod_name {
+            if pod.metadata.name.as_deref() != Some(name) {
+                return false;
+            }
+        }
+
+        if let Some(node) = node_name {
+            if pod.spec.as_ref().and_then(|s| s.node_name.as_deref()) != Some(node) {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
+/// Extract the registry from a container image reference
+///
+/// # Arguments
+///
+/// * `image` - The container image reference
+///
+/// # Returns
+///
+/// * `String` - The registry name
 pub fn extract_registry(image: &str) -> String {
     // Split the image string by '/'
     let parts: Vec<&str> = image.split('/').collect();
@@ -284,6 +339,15 @@ pub fn extract_registry(image: &str) -> String {
     "docker.io".to_string()
 }
 
+/// Split a container image reference into name and version
+///
+/// # Arguments
+///
+/// * `image` - The container image reference
+///
+/// # Returns
+///
+/// * `(String, String)` - Tuple of (image name, image version)
 pub fn split_image(image: &str) -> (String, String) {
     // First check for a digest (SHA)
     if let Some(digest_index) = image.find('@') {
@@ -337,6 +401,16 @@ pub fn split_image(image: &str) -> (String, String) {
     }
 }
 
+/// Extract the digest of a container from a pod
+///
+/// # Arguments
+///
+/// * `pod` - The pod containing the container
+/// * `container_name` - The name of the container
+///
+/// # Returns
+///
+/// * `Option<String>` - The container digest if available
 fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
     pod.status
         .as_ref()?
@@ -350,10 +424,24 @@ fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
         .map(String::from)
 }
 
+/// Process a pod to extract information about its container images
+///
+/// # Arguments
+///
+/// * `pod` - The pod to process
+///
+/// # Returns
+///
+/// * `Vec<PodImage>` - List of container images in the pod
 pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     let mut pod_images = Vec::new();
     let pod_name = pod.metadata.name.clone().unwrap_or_default();
     let namespace = pod.metadata.namespace.clone().unwrap_or_default();
+    let node_name = pod
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.node_name.clone())
+        .unwrap_or_default();
 
     if let Some(spec) = &pod.spec {
         let containers = &spec.containers;
@@ -370,7 +458,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     container_name: container.name.clone(),
                     image_name,
                     image_version,
-                    node_name: spec.node_name.clone().unwrap_or_default(),
+                    node_name: node_name.clone(),
                     registry,
                     digest,
                 });

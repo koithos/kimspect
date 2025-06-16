@@ -1,6 +1,6 @@
 use k8s_openapi::api::core::v1::{Container, Pod, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kelper::k8s::{extract_registry, process_pod, split_image};
+use kelper::{extract_registry, process_pod, split_image};
 
 fn create_test_pod(name: &str, namespace: &str, containers: Vec<Container>) -> Pod {
     Pod {

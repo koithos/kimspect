@@ -985,6 +985,7 @@ dependencies = [
  "kube",
  "mockall",
  "prettytable-rs",
+ "thiserror 2.0.12",
  "tokio",
  "tokio-test",
  "tracing",
