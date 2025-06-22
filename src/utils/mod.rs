@@ -168,27 +168,24 @@ pub fn strip_registry(image_name: &str, registry: &str) -> String {
 /// # Arguments
 ///
 /// * `registries` - List of registry URLs to display
-/// * `output_format` - Format to display the registries in
+/// * `_output_format` - Format to display the registries in (currently unused)
 ///
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
-pub fn display_registries(registries: &[String], output_format: &OutputFormat) -> Result<()> {
-    match output_format {
-        OutputFormat::Normal => {
-            println!("Container Registries:");
-            for registry in registries {
-                println!("  {}", registry);
-            }
-        }
-        OutputFormat::Wide => {
-            println!("Container Registries:");
-            println!("{:<50}", "REGISTRY");
-            println!("{}", "-".repeat(50));
-            for registry in registries {
-                println!("{:<50}", registry);
-            }
-        }
+pub fn display_registries(registries: &[String], _output_format: &OutputFormat) -> Result<()> {
+    if registries.is_empty() {
+        warn!("No registries found");
+        return Ok(());
     }
+
+    let mut table = create_table()?;
+    table.add_row(Row::new(vec![Cell::new("CONTAINER REGISTRY")]));
+
+    for registry in registries {
+        table.add_row(Row::new(vec![Cell::new(registry)]));
+    }
+
+    table.printstd();
     Ok(())
 }
