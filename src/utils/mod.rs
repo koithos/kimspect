@@ -162,3 +162,33 @@ pub fn strip_registry(image_name: &str, registry: &str) -> String {
         .unwrap_or(image_name)
         .to_string()
 }
+
+/// Display a list of container image registries in the specified format
+///
+/// # Arguments
+///
+/// * `registries` - List of registry URLs to display
+/// * `output_format` - Format to display the registries in
+///
+/// # Returns
+///
+/// * `Result<()>` - Success or error
+pub fn display_registries(registries: &[String], output_format: &OutputFormat) -> Result<()> {
+    match output_format {
+        OutputFormat::Normal => {
+            println!("Container Registries:");
+            for registry in registries {
+                println!("  {}", registry);
+            }
+        }
+        OutputFormat::Wide => {
+            println!("Container Registries:");
+            println!("{:<50}", "REGISTRY");
+            println!("{}", "-".repeat(50));
+            for registry in registries {
+                println!("{:<50}", registry);
+            }
+        }
+    }
+    Ok(())
+}
