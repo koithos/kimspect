@@ -371,16 +371,17 @@ pub fn extract_registry(image: &str) -> String {
     // Get the potential registry (first part)
     let potential_registry = parts[0];
 
-    // Check for localhost variants with or without port
+    // Check for localhost variants (with or without port)
     if potential_registry == "localhost"
         || potential_registry.starts_with("localhost:")
         || potential_registry.starts_with("127.0.0.1")
         || potential_registry.starts_with("0.0.0.0")
+        || potential_registry.starts_with("[::1]")
     {
         return potential_registry.to_string();
     }
 
-    // Check for IP address pattern (more comprehensive check)
+    // Check for IPv4 address (with or without port)
     let ip_parts: Vec<&str> = potential_registry.split(':').collect();
     let ip = ip_parts[0];
     if ip.split('.').filter(|&p| !p.is_empty()).count() == 4
@@ -389,9 +390,13 @@ pub fn extract_registry(image: &str) -> String {
         return potential_registry.to_string();
     }
 
+    // Check for IPv6 address (with or without port)
+    if potential_registry.starts_with('[') && potential_registry.contains(']') {
+        return potential_registry.to_string();
+    }
+
     // Check for known public registries
     let known_registries = KNOWN_REGISTRIES;
-
     for registry in &known_registries {
         if potential_registry == *registry || potential_registry.ends_with(*registry) {
             return potential_registry.to_string();
