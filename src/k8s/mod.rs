@@ -1,5 +1,6 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
+use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
 use thiserror::Error;
@@ -297,32 +298,37 @@ impl K8sClient {
         debug!(
             namespace = %namespace,
             all_namespaces = %all_namespaces,
-            "Fetching unique registries"
+            "Fetching unique registries from deployments"
         );
 
-        let pods = self.get_pods_api(namespace, all_namespaces, None)?;
-        let pods_list = pods
+        let deployments_api: Api<Deployment> = if all_namespaces {
+            Api::all(self.client.clone())
+        } else {
+            Api::namespaced(self.client.clone(), namespace)
+        };
+
+        let deployments = deployments_api
             .list(&Default::default())
             .await
-            .context("Failed to list pods")?;
+            .context("Failed to list deployments")?;
 
-        debug!("Found {} pods", pods_list.items.len());
+        debug!("Found {} deployments", deployments.items.len());
 
-        if pods_list.items.is_empty() {
-            let resource = format!("pods in namespace {}", namespace);
+        if deployments.items.is_empty() {
+            let resource = format!("deployments in namespace {}", namespace);
             return Err(K8sError::ResourceNotFound(resource).into());
         }
 
         let mut registries = std::collections::HashSet::new();
-        for pod in pods_list {
-            if !Self::should_process_pod(&pod, all_namespaces, None, None) {
-                continue;
-            }
-
-            for container in pod.spec.unwrap_or_default().containers {
-                if let Some(image) = container.image {
-                    let registry = extract_registry(&image);
-                    registries.insert(registry);
+        for deploy in deployments {
+            if let Some(spec) = deploy.spec {
+                if let Some(pod_spec) = spec.template.spec {
+                    for container in pod_spec.containers {
+                        if let Some(image) = container.image {
+                            let registry = extract_registry(&image);
+                            registries.insert(registry);
+                        }
+                    }
                 }
             }
         }
@@ -332,7 +338,7 @@ impl K8sClient {
 
         info!(
             total_registries = registries_vec.len(),
-            "Successfully retrieved unique registries"
+            "Successfully retrieved unique registries from deployments"
         );
         Ok(registries_vec)
     }
