@@ -1,5 +1,6 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
+use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
 use thiserror::Error;
@@ -175,6 +176,11 @@ impl K8sClient {
             "Fetching pod images"
         );
 
+        if !all_namespaces && !self.namespace_exists(namespace).await? {
+            let resource = format!("Namespace {} not found", namespace);
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
         let list_params = Self::build_list_params(node_name, pod_name);
         let pods = self.get_pods_api(namespace, all_namespaces, node_name)?;
 
@@ -274,6 +280,111 @@ impl K8sClient {
 
         true
     }
+
+    /// Get unique container image registries used in the cluster
+    ///
+    /// # Arguments
+    ///
+    /// * `namespace` - The namespace to search in
+    /// * `all_namespaces` - Whether to search in all namespaces
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<String>>` - List of unique registries or an error
+    #[instrument(skip(self), fields(
+        namespace = %namespace,
+        all_namespaces = %all_namespaces
+    ))]
+    pub async fn get_unique_registries(
+        &self,
+        namespace: &str,
+        all_namespaces: bool,
+    ) -> Result<Vec<String>> {
+        debug!(
+            namespace = %namespace,
+            all_namespaces = %all_namespaces,
+            "Fetching unique registries from deployments"
+        );
+
+        if !all_namespaces && !self.namespace_exists(namespace).await? {
+            let resource = format!("Namespace {} not found", namespace);
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
+        let deployments_api: Api<Deployment> = if all_namespaces {
+            Api::all(self.client.clone())
+        } else {
+            Api::namespaced(self.client.clone(), namespace)
+        };
+
+        let deployments = deployments_api
+            .list(&Default::default())
+            .await
+            .context("Failed to list deployments")?;
+
+        debug!("Found {} deployments", deployments.items.len());
+
+        if deployments.items.is_empty() {
+            let resource = format!("deployments in namespace {}", namespace);
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
+        let mut registries = std::collections::HashSet::new();
+        for deploy in deployments {
+            if let Some(spec) = deploy.spec {
+                if let Some(pod_spec) = spec.template.spec {
+                    for container in pod_spec.containers {
+                        if let Some(image) = container.image {
+                            let registry = extract_registry(&image);
+                            registries.insert(registry);
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut registries_vec: Vec<String> = registries.into_iter().collect();
+        registries_vec.sort();
+
+        info!(
+            total_registries = registries_vec.len(),
+            "Successfully retrieved unique registries from deployments"
+        );
+        Ok(registries_vec)
+    }
+
+    /// Check if a namespace exists
+    ///
+    /// # Arguments
+    ///
+    /// * `namespace` - The name of the namespace to check
+    ///
+    /// # Returns
+    ///
+    /// * `Result<bool>` - True if the namespace exists, false otherwise, or an error if the API call fails
+    #[instrument(skip(self), fields(namespace = %namespace))]
+    pub async fn namespace_exists(&self, namespace: &str) -> Result<bool> {
+        debug!(namespace = %namespace, "Checking if namespace exists");
+        let namespaces_api: Api<k8s_openapi::api::core::v1::Namespace> =
+            Api::all(self.client.clone());
+        match namespaces_api.get(namespace).await {
+            Ok(_) => {
+                debug!(namespace = %namespace, "Namespace found");
+                Ok(true)
+            }
+            Err(kube::Error::Api(api_err)) if api_err.code == 404 => {
+                debug!(namespace = %namespace, "Namespace not found");
+                Ok(false)
+            }
+            Err(e) => {
+                error!(namespace = %namespace, error = %e, "Failed to check namespace existence");
+                Err(
+                    K8sError::ApiError(format!("Failed to check namespace {}: {}", namespace, e))
+                        .into(),
+                )
+            }
+        }
+    }
 }
 
 /// Extract the registry from a container image reference
@@ -303,16 +414,17 @@ pub fn extract_registry(image: &str) -> String {
     // Get the potential registry (first part)
     let potential_registry = parts[0];
 
-    // Check for localhost variants with or without port
+    // Check for localhost variants (with or without port)
     if potential_registry == "localhost"
         || potential_registry.starts_with("localhost:")
         || potential_registry.starts_with("127.0.0.1")
         || potential_registry.starts_with("0.0.0.0")
+        || potential_registry.starts_with("[::1]")
     {
         return potential_registry.to_string();
     }
 
-    // Check for IP address pattern (more comprehensive check)
+    // Check for IPv4 address (with or without port)
     let ip_parts: Vec<&str> = potential_registry.split(':').collect();
     let ip = ip_parts[0];
     if ip.split('.').filter(|&p| !p.is_empty()).count() == 4
@@ -321,9 +433,13 @@ pub fn extract_registry(image: &str) -> String {
         return potential_registry.to_string();
     }
 
+    // Check for IPv6 address (with or without port)
+    if potential_registry.starts_with('[') && potential_registry.contains(']') {
+        return potential_registry.to_string();
+    }
+
     // Check for known public registries
     let known_registries = KNOWN_REGISTRIES;
-
     for registry in &known_registries {
         if potential_registry == *registry || potential_registry.ends_with(*registry) {
             return potential_registry.to_string();
