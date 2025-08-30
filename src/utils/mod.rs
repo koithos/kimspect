@@ -35,6 +35,14 @@ impl std::fmt::Display for TableDisplayError {
     }
 }
 
+impl TableDisplayError {
+    pub fn new(message: &str) -> Self {
+        Self {
+            message: message.to_string(),
+        }
+    }
+}
+
 /// Display pod images in a formatted table
 ///
 /// # Arguments
@@ -45,7 +53,10 @@ impl std::fmt::Display for TableDisplayError {
 /// # Returns
 ///
 /// * `Result<()>` - Success or error
-pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) -> Result<()> {
+pub fn display_pod_images(
+    images: &[PodImage],
+    output_format: &OutputFormat,
+) -> Result<(), TableDisplayError> {
     if images.is_empty() {
         warn!("No images found matching criteria");
         return Ok(());
@@ -56,7 +67,8 @@ pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) -> 
     table.add_row(header_row);
 
     for image in images {
-        let row = create_image_row(image, output_format)?;
+        let row = create_image_row(image, output_format)
+            .map_err(|e| TableDisplayError::new(&e.message))?;
         table.add_row(row);
     }
 
@@ -69,7 +81,7 @@ pub fn display_pod_images(images: &[PodImage], output_format: &OutputFormat) -> 
 /// # Returns
 ///
 /// * `Result<Table>` - A new table instance or error
-fn create_table() -> Result<Table> {
+fn create_table() -> Result<Table, TableDisplayError> {
     let format = FormatBuilder::new()
         .column_separator(' ')
         .separator(
@@ -123,7 +135,10 @@ fn create_header_row(output_format: &OutputFormat) -> Row {
 /// # Returns
 ///
 /// * `Result<Row>` - A row containing the image information or error
-fn create_image_row(image: &PodImage, output_format: &OutputFormat) -> Result<Row> {
+fn create_image_row(
+    image: &PodImage,
+    output_format: &OutputFormat,
+) -> Result<Row, TableDisplayError> {
     let mut cells = vec![
         Cell::new(&image.pod_name),
         Cell::new(&image.namespace),
@@ -161,4 +176,34 @@ pub fn strip_registry(image_name: &str, registry: &str) -> String {
         .strip_prefix(&format!("{}/", registry))
         .unwrap_or(image_name)
         .to_string()
+}
+
+/// Display a list of container image registries in the specified format
+///
+/// # Arguments
+///
+/// * `registries` - List of registry URLs to display
+/// * `_output_format` - Format to display the registries in (currently unused)
+///
+/// # Returns
+///
+/// * `Result<()>` - Success or error
+pub fn display_registries(
+    registries: &[String],
+    _output_format: &OutputFormat,
+) -> Result<(), TableDisplayError> {
+    if registries.is_empty() {
+        warn!("No registries found");
+        return Ok(());
+    }
+
+    let mut table = create_table()?;
+    table.add_row(Row::new(vec![Cell::new("CONTAINER REGISTRY")]));
+
+    for registry in registries {
+        table.add_row(Row::new(vec![Cell::new(registry)]));
+    }
+
+    table.printstd();
+    Ok(())
 }
