@@ -176,6 +176,11 @@ impl K8sClient {
             "Fetching pod images"
         );
 
+        if !all_namespaces && !self.namespace_exists(namespace).await? {
+            let resource = format!("Namespace {} not found", namespace);
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
         let list_params = Self::build_list_params(node_name, pod_name);
         let pods = self.get_pods_api(namespace, all_namespaces, node_name)?;
 
