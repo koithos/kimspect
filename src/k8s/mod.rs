@@ -301,6 +301,11 @@ impl K8sClient {
             "Fetching unique registries from deployments"
         );
 
+        if !all_namespaces && !self.namespace_exists(namespace).await? {
+            let resource = format!("Namespace {} not found", namespace);
+            return Err(K8sError::ResourceNotFound(resource).into());
+        }
+
         let deployments_api: Api<Deployment> = if all_namespaces {
             Api::all(self.client.clone())
         } else {
@@ -341,6 +346,39 @@ impl K8sClient {
             "Successfully retrieved unique registries from deployments"
         );
         Ok(registries_vec)
+    }
+
+    /// Check if a namespace exists
+    ///
+    /// # Arguments
+    ///
+    /// * `namespace` - The name of the namespace to check
+    ///
+    /// # Returns
+    ///
+    /// * `Result<bool>` - True if the namespace exists, false otherwise, or an error if the API call fails
+    #[instrument(skip(self), fields(namespace = %namespace))]
+    pub async fn namespace_exists(&self, namespace: &str) -> Result<bool> {
+        debug!(namespace = %namespace, "Checking if namespace exists");
+        let namespaces_api: Api<k8s_openapi::api::core::v1::Namespace> =
+            Api::all(self.client.clone());
+        match namespaces_api.get(namespace).await {
+            Ok(_) => {
+                debug!(namespace = %namespace, "Namespace found");
+                Ok(true)
+            }
+            Err(kube::Error::Api(api_err)) if api_err.code == 404 => {
+                debug!(namespace = %namespace, "Namespace not found");
+                Ok(false)
+            }
+            Err(e) => {
+                error!(namespace = %namespace, error = %e, "Failed to check namespace existence");
+                Err(
+                    K8sError::ApiError(format!("Failed to check namespace {}: {}", namespace, e))
+                        .into(),
+                )
+            }
+        }
     }
 }
 
