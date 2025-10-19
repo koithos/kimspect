@@ -975,7 +975,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "kelper"
+name = "kimspect"
 version = "0.0.30"
 dependencies = [
  "anyhow",

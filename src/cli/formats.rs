@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use std::fmt;
 
-/// Logging format options for Kelper
+/// Logging format options for Kimspect
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum LogFormat {
     /// Plain text format, better for local development

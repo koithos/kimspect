@@ -3,7 +3,7 @@ use crate::cli::Commands;
 use clap::Parser;
 use std::path::PathBuf;
 
-/// Command line arguments for the Kelper application
+/// Command line arguments for the Kimspect application
 #[derive(Parser, Debug)]
 #[command(
     author,
