@@ -4,7 +4,7 @@ set -e
 TAP_DIR=$(basename "$TAP_REPO")
 AMD64_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/${AMD64_NAME}"
 ARM64_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/${ARM64_NAME}"
-TEMPLATE_FILE_PATH="$(dirname "$0")/kelper.rb.tpl"
+TEMPLATE_FILE_PATH="$(dirname "$0")/kimspect.rb.tpl"
 
 echo "Cloning tap repository $TAP_REPO..."
 # Use the passed TAP_TOKEN for authentication
