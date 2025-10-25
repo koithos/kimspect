@@ -2,11 +2,11 @@
 
 [![Crates.io Version](https://img.shields.io/crates/v/kimspect)](https://crates.io/crates/kimspect) [![Crates.io Downloads](https://img.shields.io/crates/d/kimspect)](https://crates.io/crates/kimspect) [![release](https://github.com/koithos/kimspect/actions/workflows/release.yml/badge.svg)](https://github.com/koithos/kimspect/actions/workflows/release.yml) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/koithos/kimspect)](https://github.com/koithos/kimspect/releases/latest) [![License](https://img.shields.io/crates/l/kimspect)](https://github.com/koithos/kimspect/blob/main/LICENSE) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![GitHub last commit](https://img.shields.io/github/last-commit/koithos/kimspect)](https://github.com/koithos/kimspect/commits/main)
 
-A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and nodes. kimspect helps you quickly inspect container images, labels, annotations, health metrics from probes, and many other useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
+**kimspect** is a kubernetes container image inspection tool that provides comprehensive visibility into container images running inside your cluster. kimspect can get image information by pod, namespace, and node. Built for performance and reliability, kimspect enables container image insights with a simple, intuitive command-line interface.
 
 ## Features
 
-- [x] List images in a Kubernetes cluster based on different filters:
+- [x] List images in a cluster based on different filters:
   - by namespace
   - by node
   - by pod name
