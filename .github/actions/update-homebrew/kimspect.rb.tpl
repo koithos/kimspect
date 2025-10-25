@@ -1,7 +1,7 @@
-# Formula/kelper.rb
-class Kelper < Formula
-  desc "A CLI tool for Kelper"
-  homepage "https://github.com/aliabbasjaffri/kelper"
+# Formula/kimspect.rb
+class kimspect < Formula
+  desc "A CLI tool for kimspect"
+  homepage "https://github.com/koithos/kimspect"
   version "${version}"
   license "MIT"
 
@@ -18,13 +18,13 @@ class Kelper < Formula
 
   def install
     if Hardware::CPU.intel?
-      bin.install "kelper-x86_64-apple-darwin" => "kelper"
+      bin.install "kimspect-x86_64-apple-darwin" => "kimspect"
     elsif Hardware::CPU.arm?
-      bin.install "kelper-aarch64-apple-darwin" => "kelper"
+      bin.install "kimspect-aarch64-apple-darwin" => "kimspect"
     end
   end
 
   test do
-    system "#{bin}/kelper", "--version"
+    system "#{bin}/kimspect", "--version"
   end
 end

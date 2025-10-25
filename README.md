@@ -1,49 +1,47 @@
-# Kelper
+# kimspect
 
-[![Crates.io Version](https://img.shields.io/crates/v/kelper)](https://crates.io/crates/kelper) [![Crates.io Downloads](https://img.shields.io/crates/d/kelper)](https://crates.io/crates/kelper) [![release](https://github.com/aliabbasjaffri/kelper/actions/workflows/release.yml/badge.svg)](https://github.com/aliabbasjaffri/kelper/actions/workflows/release.yml) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/aliabbasjaffri/kelper)](https://github.com/aliabbasjaffri/kelper/releases/latest) [![License](https://img.shields.io/crates/l/kelper)](https://github.com/aliabbasjaffri/kelper/blob/main/LICENSE) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![GitHub last commit](https://img.shields.io/github/last-commit/aliabbasjaffri/kelper)](https://github.com/aliabbasjaffri/kelper/commits/main)
+[![Crates.io Version](https://img.shields.io/crates/v/kimspect)](https://crates.io/crates/kimspect) [![Crates.io Downloads](https://img.shields.io/crates/d/kimspect)](https://crates.io/crates/kimspect) [![release](https://github.com/koithos/kimspect/actions/workflows/release.yml/badge.svg)](https://github.com/koithos/kimspect/actions/workflows/release.yml) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/koithos/kimspect)](https://github.com/koithos/kimspect/releases/latest) [![License](https://img.shields.io/crates/l/kimspect)](https://github.com/koithos/kimspect/blob/main/LICENSE) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![GitHub last commit](https://img.shields.io/github/last-commit/koithos/kimspect)](https://github.com/koithos/kimspect/commits/main)
 
-A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and nodes. Kelper helps you quickly inspect container images, labels, annotations, health metrics from probes, and many other useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
+A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and nodes. kimspect helps you quickly inspect container images, labels, annotations, health metrics from probes, and many other useful functionalities from your Kubernetes clusters, with support for filtering by namespace, node, and pod name.
 
 ## Features
 
 - [x] List images in a Kubernetes cluster based on different filters:
-  - Filter by namespace
-  - Filter by node
-  - Filter by pod name
-  - Filter by container image registry
+  - by namespace
+  - by node
+  - by pod name
+  - by container image registry
 - [x] Advanced logging capabilities:
   - Multiple verbosity levels (-v, -vv, -vvv, -vvvv)
   - Support for both plain and JSON log formats
-- [ ] Get labels and annotations in a pod, namespace, or node (coming soon)
-- [ ] Retrieve health and metrics from pods or nodes (coming soon)
 
 ## Installation
 
-Kelper can be installed using several package managers. Choose the one that suits your environment:
+kimspect can be installed using several package managers. Choose the one that suits your environment:
 
 ### Using Cargo (Rust's Package Manager)
 
-If you have Rust and Cargo installed, you can build and install Kelper directly from the source:
+If you have Rust and Cargo installed, you can build and install kimspect directly from the source:
 
 ```bash
-cargo install kelper
+cargo install kimspect
 ```
 
 ### Using Homebrew (macOS)
 
-If you are on macOS and use Homebrew, you can install Kelper via our tap:
+If you are on macOS and use Homebrew, you can install kimspect via our tap:
 
 ```bash
-brew tap aliabbasjaffri/kelper
-brew install kelper
+brew tap koithos/kimspect
+brew install kimspect
 ```
 
 ### Using Krew (kubectl Plugin Manager)
 
-If you use `kubectl` and have Krew installed, you can install Kelper as a kubectl plugin:
+If you use `kubectl` and have Krew installed, you can install kimspect as a kubectl plugin:
 
 ```bash
-kubectl krew install kelper
+kubectl krew install kimspect
 ```
 
 ## Usage
@@ -52,49 +50,49 @@ kubectl krew install kelper
 
 ```bash
 # List Pod Images in a Namespace
-kelper get images --namespace default
+kimspect get images --namespace default
 
 # List Pod Images on a Specific Node
-kelper get images -N node-name
+kimspect get images -N node-name
 # or
-kelper get images --node node-name
+kimspect get images --node node-name
 
 # Note: When using the `--node` flag, the `--namespace` parameter is ignored as it will show pods from all namespaces on the specified node.
 
 # List Images for a Specific Pod
-kelper get images -p pod-name
+kimspect get images -p pod-name
 # or
-kelper get images --pod pod-name
+kimspect get images --pod pod-name
 
 # You can combine filters to get more specific results. For example, to get images for a specific pod on a specific node:
-kelper get images -N node-name -p pod-name
+kimspect get images -N node-name -p pod-name
 
 # List images from all namespaces
-kelper get images --all-namespaces
+kimspect get images --all-namespaces
 
 # Filter images by registry
-kelper get images --registry "docker.io" --namespace kube-system
+kimspect get images --registry "docker.io" --namespace kube-system
 
 # Filter images by registry in a specific node
-kelper get images --registry "quay.io" --node node-name
+kimspect get images --registry "quay.io" --node node-name
 
 # Filter images by registry across all namespaces
-kelper get images --registry "quay.io" --all-namespaces
+kimspect get images --registry "quay.io" --all-namespaces
 
 # Enable verbose logging
-kelper get images -v  # WARN
-kelper get images -vv  # INFO
-kelper get images -vvv  # DEBUG
-kelper get images -vvvv  # TRACE
+kimspect get images -v  # WARN
+kimspect get images -vv  # INFO
+kimspect get images -vvv  # DEBUG
+kimspect get images -vvvv  # TRACE
 
 # Use JSON log format
-kelper get images -vvv --log-format json
+kimspect get images -vvv --log-format json
 ```
 
-Kelper displays information in a clean tabular format:
+kimspect displays information in a clean tabular format:
 
 ```
-kelper get images -o wide
+kimspect get images -o wide
 POD                                NAMESPACE  CONTAINER       REGISTRY         IMAGE                          VERSION      DIGEST                                                            NODE
 metrics-server-8664d5f5f7-krxm6    default    linkerd-proxy   cr.l5d.io        linkerd/proxy                  edge-25.3.3  496429c2a4a430d7acb4393d01c4d5971a8e3e385e5f47ceaac29dde009e7189  multi-node-cluster-worker
 metrics-server-8664d5f5f7-krxm6    default    metrics-server  registry.k8s.io  metrics-server/metrics-server  v0.7.2       ffcb2bf004d6aa0a17d90e0247cf94f2865c8901dcab4427034c341951c239f9  multi-node-cluster-worker
@@ -114,14 +112,14 @@ ollama-models-store-0              default    server          docker.io        o
 ### Building from Source
 
 ```bash
-# clone kelper project
-cd kelper
+# clone kimspect project
+cd kimspect
 cargo build --release
 ```
 
 ### Testing
 
-Kelper includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory.
+kimspect includes comprehensive tests covering various aspects of the codebase. The tests are organized in the `tests` directory.
 
 To run the tests:
 

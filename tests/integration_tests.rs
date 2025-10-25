@@ -1,5 +1,5 @@
 use anyhow::Result;
-use kelper::{K8sClient, K8sError};
+use kimspect::{K8sClient, K8sError};
 
 #[tokio::test]
 async fn test_k8s_client_creation() -> Result<()> {

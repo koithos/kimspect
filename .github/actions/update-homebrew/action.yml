@@ -1,5 +1,5 @@
 name: Update Homebrew Formula
-description: This action updates homebrew formula used to install kelper
+description: This action updates homebrew formula used to install kimspect
 
 inputs:
   release_tag:
@@ -14,18 +14,18 @@ inputs:
   amd64_artifact_name:
     description: "amd64 artifact build name"
     required: true
-    default: "kelper-x86_64-apple-darwin"
+    default: "kimspect-x86_64-apple-darwin"
   arm64_artifact_name:
     description: "arm64 artifact build name"
     required: true
-    default: "kelper-aarch64-apple-darwin"
+    default: "kimspect-aarch64-apple-darwin"
   tap_repo:
     description: "The owner/repo name of the tap repository (e.g., your-username/homebrew-your-tap-name)"
     required: true
   formula_path:
-    description: "Path to the formula file within the tap repository (e.g., Formula/kelper.rb)"
+    description: "Path to the formula file within the tap repository (e.g., Formula/kimspect.rb)"
     required: true
-    default: "Formula/kelper.rb"
+    default: "Formula/kimspect.rb"
   repository:
     description: "Repository name for the formula"
     required: true

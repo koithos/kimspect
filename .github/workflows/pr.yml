@@ -16,10 +16,8 @@ jobs:
         run: cargo clippy -- -D warnings
         shell: bash
       - name: Format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check --color always
+        run: cargo fmt --all -- --check --color always
+        shell: bash
   build:
     timeout-minutes: 10
     strategy:
@@ -50,6 +48,5 @@ jobs:
         with:
           cluster_name: testing-cluster
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: cargo test
+        shell: bash

@@ -2,7 +2,7 @@ use crate::cli::formats::OutputFormat;
 use clap::Subcommand;
 use std::path::PathBuf;
 
-/// CLI command structure for Kelper
+/// CLI command structure for Kimspect
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Get information about Kubernetes resources

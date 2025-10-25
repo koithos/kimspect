@@ -1,14 +1,14 @@
 use anyhow::Context;
 use clap::Parser;
-use kelper::{
+use kimspect::{
     display_pod_images, display_registries, logging, Args, Commands, GetImages, K8sClient,
-    KelperResult,
+    KimspectResult,
 };
 use tracing::{debug, info, instrument, warn};
 
-/// Main entry point for the Kelper application
+/// Main entry point for the Kimspect application
 #[tokio::main]
-async fn main() -> KelperResult<()> {
+async fn main() -> KimspectResult<()> {
     let args = Args::parse();
 
     // Initialize logging with the specified format
@@ -32,7 +32,7 @@ async fn main() -> KelperResult<()> {
 
 /// Process the command line arguments and execute the corresponding command
 #[instrument(skip(client), level = "debug")]
-async fn process_commands(args: Args, client: K8sClient) -> KelperResult<()> {
+async fn process_commands(args: Args, client: K8sClient) -> KimspectResult<()> {
     match args.command {
         Commands::Get { resource } => match resource {
             GetImages::Images {
