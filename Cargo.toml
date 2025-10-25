@@ -2,7 +2,7 @@
 name = "kimspect"
 version = "0.0.32"
 authors = ["Ali Abbas Jaffri <ali.abbasjaffri@live.com>"]
-description = "A CLI tool to serve as swiss-army knife for your operations on Kubernetes pods and nodes"
+description = "The missing utility in kubectl to help you inspect container images on your pods and nodes."
 keywords = ["k8s", "search", "pattern"]
 repository = "https://github.com/koithos/kimspect"
 categories = ["command-line-utilities"]
