@@ -7,15 +7,13 @@ A CLI tool designed as a swiss-army knife for operations on Kubernetes pods and 
 ## Features
 
 - [x] List images in a Kubernetes cluster based on different filters:
-  - Filter by namespace
-  - Filter by node
-  - Filter by pod name
-  - Filter by container image registry
+  - by namespace
+  - by node
+  - by pod name
+  - by container image registry
 - [x] Advanced logging capabilities:
   - Multiple verbosity levels (-v, -vv, -vvv, -vvvv)
   - Support for both plain and JSON log formats
-- [ ] Get labels and annotations in a pod, namespace, or node (coming soon)
-- [ ] Retrieve health and metrics from pods or nodes (coming soon)
 
 ## Installation
 
