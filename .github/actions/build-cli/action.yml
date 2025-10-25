@@ -16,26 +16,24 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions-rs/toolchain@v1
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ inputs.rust_toolchain }}
-        override: true
-        target: ${{ inputs.target_platform }}
+        targets: ${{ inputs.target_platform }}
         components: clippy, rustfmt
     - name: Cache dependencies for ${{ inputs.runner_os }}-${{ inputs.target_platform }}
       uses: actions/cache@v4
       with:
         path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
+          ${{ runner.os == 'Windows' && 'C:\\Users\\runneradmin\\.cargo\\bin' || '~/.cargo/bin' }}
+          ${{ runner.os == 'Windows' && 'C:\\Users\\runneradmin\\.cargo\\registry\\index' || '~/.cargo/registry/index' }}
+          ${{ runner.os == 'Windows' && 'C:\\Users\\runneradmin\\.cargo\\registry\\cache' || '~/.cargo/registry/cache' }}
+          ${{ runner.os == 'Windows' && 'C:\\Users\\runneradmin\\.cargo\\git\\db' || '~/.cargo/git/db' }}
           target/
         key: ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-
     - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --release --target=${{ inputs.target_platform }}
+      run: cargo build --release --target=${{ inputs.target_platform }}
+      shell: bash
