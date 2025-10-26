@@ -33,7 +33,7 @@ runs:
           target/
         key: ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-
+          ${{ inputs.runner_os }}-${{ inputs.target_platform }}-${{ inputs.rust_toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
       run: cargo build --release --target=${{ inputs.target_platform }}
       shell: bash
