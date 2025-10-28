@@ -4,10 +4,12 @@ metadata:
   name: kimspect
 spec:
   version: {{ .TagName }}
-  shortDescription: The missing utility in kubectl to help you inspect container images on your pods and nodes.
+  shortDescription: inspect container images on your pods and nodes.
   description: |
-    kimspect is a kubernetes container image inspection tool that provides comprehensive visibility into container images running inside your cluster and can get
-     container image information by pod, namespace, and node in your cluster.
+    kimspect is a kubernetes container image inspection tool that provides
+    comprehensive visibility into container images running inside your cluster
+    and can get container image & registry information by pods, namespaces and nodes
+    in your cluster
   homepage: https://github.com/koithos/kimspect
   platforms:
     - selector:
