@@ -4,7 +4,7 @@ metadata:
   name: kimspect
 spec:
   version: {{ .TagName }}
-  shortDescription: inspect container images on your pods and nodes.
+  shortDescription: Inspect container images on your pods and nodes.
   description: |
     kimspect is a kubernetes container image inspection tool that provides
     comprehensive visibility into container images running inside your cluster
