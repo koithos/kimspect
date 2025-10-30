@@ -248,15 +248,14 @@ impl K8sClient {
                             std::collections::HashMap::new();
                         for node_image in node_images {
                             let size = node_image.size_bytes.unwrap_or(0) as u64;
-                            let node_image_names =
-                                node_image.names.expect("node image names must be present");
-                            for node_image_name in node_image_names {
-                                if let Some(idx) = node_image_name.find('@') {
-                                    let node_image_digest = &node_image_name[idx + 1..];
-                                    if digest_map.get(node_image_digest).copied().unwrap_or(0)
-                                        < size
-                                    {
-                                        digest_map.insert(node_image_digest.to_string(), size);
+                            if let Some(names) = node_image.names {
+                                // All names typically refer to the same digest, so extract once
+                                if let Some(digest) = names
+                                    .iter()
+                                    .find_map(|name| name.find('@').map(|idx| &name[idx + 1..]))
+                                {
+                                    if digest_map.get(digest).copied().unwrap_or(0) < size {
+                                        digest_map.insert(digest.to_string(), size);
                                     }
                                 }
                             }
