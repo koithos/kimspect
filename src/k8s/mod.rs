@@ -277,11 +277,7 @@ impl K8sClient {
                         },
                     );
 
-                if digest_map.is_empty() {
-                    None
-                } else {
-                    Some((name, digest_map))
-                }
+                (!digest_map.is_empty()).then_some((name, digest_map))
             })
             .for_each(|(name, digest_map)| {
                 node_to_digest_size.insert(name, digest_map);
