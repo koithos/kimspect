@@ -241,30 +241,39 @@ impl K8sClient {
             .collect();
 
         for node_name in all_nodes {
-            if let Ok(node) = nodes_api.get(&node_name).await {
-                if let Some(node_status) = node.status {
-                    if let Some(node_images) = node_status.images {
-                        let mut digest_map: std::collections::HashMap<String, u64> =
-                            std::collections::HashMap::new();
-                        for node_image in node_images {
-                            let size = node_image.size_bytes.unwrap_or(0) as u64;
-                            if let Some(names) = node_image.names {
-                                // All names typically refer to the same digest, so extract once
-                                if let Some(digest) = names
-                                    .iter()
-                                    .find_map(|name| name.find('@').map(|idx| &name[idx + 1..]))
-                                {
-                                    if digest_map.get(digest).copied().unwrap_or(0) < size {
-                                        digest_map.insert(digest.to_string(), size);
-                                    }
-                                }
-                            }
-                        }
-                        if !digest_map.is_empty() {
-                            node_to_digest_size.insert(node_name.clone(), digest_map);
-                        }
-                    }
-                }
+            let Ok(node) = nodes_api.get(&node_name).await else {
+                continue;
+            };
+            let Some(node_status) = node.status else {
+                continue;
+            };
+            let Some(node_images) = node_status.images else {
+                continue;
+            };
+
+            let digest_map: std::collections::HashMap<String, u64> = node_images
+                .into_iter()
+                .filter_map(|img| {
+                    let size = img.size_bytes.unwrap_or(0) as u64;
+                    img.names.and_then(|names| {
+                        names.iter().find_map(|name| {
+                            name.find('@')
+                                .map(|idx| (name[idx + 1..].to_string(), size))
+                        })
+                    })
+                })
+                .fold(
+                    std::collections::HashMap::new(),
+                    |mut acc, (digest, size)| {
+                        acc.entry(digest)
+                            .and_modify(|v| *v = (*v).max(size))
+                            .or_insert(size);
+                        acc
+                    },
+                );
+
+            if !digest_map.is_empty() {
+                node_to_digest_size.insert(node_name, digest_map);
             }
         }
 
