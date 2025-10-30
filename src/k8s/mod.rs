@@ -1,6 +1,7 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
+use k8s_openapi::api::core::v1::Node;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
 use thiserror::Error;
@@ -25,6 +26,8 @@ pub struct PodImage {
     pub registry: String,
     /// Image digest (if available)
     pub digest: String,
+    /// Image size in a human readable format (if available)
+    pub image_size: String,
 }
 
 /// Errors that can occur when interacting with Kubernetes
@@ -220,6 +223,61 @@ impl K8sClient {
                 after = all_images.len(),
                 "Filtered images by registry"
             );
+        }
+
+        let nodes_api: Api<Node> = Api::all(self.client.clone());
+
+        // hashmap: node_name -> { digest -> size_bytes }
+        let mut node_to_digest_size: std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, u64>,
+        > = std::collections::HashMap::new();
+
+        // Determine needed nodes (assume every image has a digest)
+        let needed_nodes: std::collections::HashSet<String> = all_images
+            .iter()
+            .filter(|pi| !pi.node_name.is_empty())
+            .map(|pi| pi.node_name.clone())
+            .collect();
+
+        for node_name in needed_nodes {
+            if let Ok(node) = nodes_api.get(&node_name).await {
+                if let Some(status) = node.status {
+                    if let Some(images) = status.images {
+                        let mut digest_map: std::collections::HashMap<String, u64> =
+                            std::collections::HashMap::new();
+                        for img in images {
+                            let size = img.size_bytes.unwrap_or(0) as u64;
+                            let names = img.names.expect("node image names must be present");
+                            for name in names {
+                                if let Some(idx) = name.find('@') {
+                                    let digest = &name[idx + 1..];
+                                    match digest_map.get(digest) {
+                                        Some(existing) if *existing >= size => {}
+                                        _ => {
+                                            digest_map.insert(digest.to_string(), size);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if !digest_map.is_empty() {
+                            node_to_digest_size.insert(node_name.clone(), digest_map);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Assign sizes to images where possible
+        for img in &mut all_images {
+            if img.image_size.is_empty() && !img.node_name.is_empty() {
+                if let Some(dmap) = node_to_digest_size.get(&img.node_name) {
+                    if let Some(size) = dmap.get(&img.digest) {
+                        img.image_size = format_bytes(*size);
+                    }
+                }
+            }
         }
 
         info!(
@@ -528,16 +586,49 @@ pub fn split_image(image: &str) -> (String, String) {
 ///
 /// * `Option<String>` - The container digest if available
 fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
-    pod.status
+    let image_id = pod
+        .status
         .as_ref()?
         .container_statuses
         .as_ref()?
         .iter()
         .find(|cs| cs.name == container_name)?
         .image_id
-        .split(':')
-        .nth(1)
-        .map(String::from)
+        .clone();
+
+    // Prefer digest after '@' when present (docker-pullable format)
+    if let Some(at) = image_id.find('@') {
+        let digest = &image_id[at + 1..];
+        if digest.contains(':') {
+            return Some(digest.to_string());
+        }
+    }
+
+    // Fallback: find well-known algo prefix within the string
+    for algo in ["sha256:", "sha512:"] {
+        if let Some(pos) = image_id.find(algo) {
+            return Some(image_id[pos..].to_string());
+        }
+    }
+
+    None
+}
+
+/// Format bytes to a human-readable string (e.g., 123.4MiB)
+fn format_bytes(bytes: u64) -> String {
+    const KB: f64 = 1024.0;
+    const MB: f64 = KB * 1024.0;
+    const GB: f64 = MB * 1024.0;
+    let b = bytes as f64;
+    if b >= GB {
+        format!("{:.1}GiB", b / GB)
+    } else if b >= MB {
+        format!("{:.1}MiB", b / MB)
+    } else if b >= KB {
+        format!("{:.1}KiB", b / KB)
+    } else {
+        format!("{}B", bytes)
+    }
 }
 
 /// Process a pod to extract information about its container images
@@ -577,6 +668,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     node_name: node_name.clone(),
                     registry,
                     digest,
+                    image_size: String::new(),
                 });
             }
         }
