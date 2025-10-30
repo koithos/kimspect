@@ -119,7 +119,11 @@ fn create_header_row(output_format: &OutputFormat) -> Row {
     header_cells.extend_from_slice(&[Cell::new("IMAGE"), Cell::new("VERSION")]);
 
     if matches!(output_format, OutputFormat::Wide) {
-        header_cells.extend_from_slice(&[Cell::new("DIGEST"), Cell::new("NODE")]);
+        header_cells.extend_from_slice(&[
+            Cell::new("SIZE"),
+            Cell::new("DIGEST"),
+            Cell::new("NODE"),
+        ]);
     }
 
     Row::new(header_cells)
@@ -155,7 +159,11 @@ fn create_image_row(
     ]);
 
     if matches!(output_format, OutputFormat::Wide) {
-        cells.extend_from_slice(&[Cell::new(&image.digest), Cell::new(&image.node_name)]);
+        cells.extend_from_slice(&[
+            Cell::new(&image.image_size),
+            Cell::new(&image.digest),
+            Cell::new(&image.node_name),
+        ]);
     }
 
     Ok(Row::new(cells))
