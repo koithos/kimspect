@@ -278,15 +278,15 @@ impl K8sClient {
         }
 
         // Assign sizes to images where possible
-        for img in &mut all_images {
-            if img.image_size.is_empty() && !img.node_name.is_empty() {
-                if let Some(dmap) = node_to_digest_size.get(&img.node_name) {
-                    if let Some(size) = dmap.get(&img.digest) {
-                        img.image_size = format_bytes(*size);
-                    }
-                }
-            }
-        }
+        all_images
+            .iter_mut()
+            .filter(|img| img.image_size.is_empty() && !img.node_name.is_empty())
+            .for_each(|img| {
+                node_to_digest_size
+                    .get(&img.node_name)
+                    .and_then(|dmap| dmap.get(&img.digest))
+                    .map(|size| img.image_size = format_bytes(*size));
+            });
 
         info!(
             total_images = all_images.len(),
