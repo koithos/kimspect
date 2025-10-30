@@ -253,11 +253,10 @@ impl K8sClient {
                             for node_image_name in node_image_names {
                                 if let Some(idx) = node_image_name.find('@') {
                                     let node_image_digest = &node_image_name[idx + 1..];
-                                    match digest_map.get(node_image_digest) {
-                                        Some(existing) if *existing >= size => {}
-                                        _ => {
-                                            digest_map.insert(node_image_digest.to_string(), size);
-                                        }
+                                    if digest_map.get(node_image_digest).copied().unwrap_or(0)
+                                        < size
+                                    {
+                                        digest_map.insert(node_image_digest.to_string(), size);
                                     }
                                 }
                             }
