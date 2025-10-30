@@ -604,22 +604,18 @@ fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
         .image_id
         .clone();
 
-    // Prefer digest after '@' when present (docker-pullable format)
-    if let Some(at) = image_id.find('@') {
-        let digest = &image_id[at + 1..];
-        if digest.contains(':') {
-            return Some(digest.to_string());
-        }
-    }
-
-    // Fallback: find well-known algo prefix within the string
-    for algo in ["sha256:", "sha512:"] {
-        if let Some(pos) = image_id.find(algo) {
-            return Some(image_id[pos..].to_string());
-        }
-    }
-
-    None
+    // Try to find digest after '@' first (docker-pullable format)
+    image_id
+        .find('@')
+        .map(|at| &image_id[at + 1..])
+        .filter(|digest| digest.contains(':'))
+        .map(|digest| digest.to_string())
+        .or_else(|| {
+            ["sha256:", "sha512:"]
+                .iter()
+                .find_map(|algo| image_id.find(algo))
+                .map(|pos| image_id[pos..].to_string())
+        })
 }
 
 /// Format bytes to a human-readable string (e.g., 123.4MiB)
