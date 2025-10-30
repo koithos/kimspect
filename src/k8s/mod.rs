@@ -240,10 +240,18 @@ impl K8sClient {
             .map(|pi| pi.node_name.clone())
             .collect();
 
-        for node_name in all_nodes {
-            let Ok(node) = nodes_api.get(&node_name).await else {
+        let Ok(node_list) = nodes_api.list(&ListParams::default()).await else {
+            info!("Skipping node image size enrichment due to node list failure");
+            return Ok(all_images);
+        };
+
+        for node in node_list {
+            let Some(name) = node.metadata.name.clone() else {
                 continue;
             };
+            if !all_nodes.contains(&name) {
+                continue;
+            }
             let Some(node_status) = node.status else {
                 continue;
             };
@@ -273,7 +281,7 @@ impl K8sClient {
                 );
 
             if !digest_map.is_empty() {
-                node_to_digest_size.insert(node_name, digest_map);
+                node_to_digest_size.insert(name, digest_map);
             }
         }
 
