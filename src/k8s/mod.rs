@@ -234,28 +234,29 @@ impl K8sClient {
         > = std::collections::HashMap::new();
 
         // Determine needed nodes (assume every image has a digest)
-        let needed_nodes: std::collections::HashSet<String> = all_images
+        let all_nodes: std::collections::HashSet<String> = all_images
             .iter()
             .filter(|pi| !pi.node_name.is_empty())
             .map(|pi| pi.node_name.clone())
             .collect();
 
-        for node_name in needed_nodes {
+        for node_name in all_nodes {
             if let Ok(node) = nodes_api.get(&node_name).await {
-                if let Some(status) = node.status {
-                    if let Some(images) = status.images {
+                if let Some(node_status) = node.status {
+                    if let Some(node_images) = node_status.images {
                         let mut digest_map: std::collections::HashMap<String, u64> =
                             std::collections::HashMap::new();
-                        for img in images {
-                            let size = img.size_bytes.unwrap_or(0) as u64;
-                            let names = img.names.expect("node image names must be present");
-                            for name in names {
-                                if let Some(idx) = name.find('@') {
-                                    let digest = &name[idx + 1..];
-                                    match digest_map.get(digest) {
+                        for node_image in node_images {
+                            let size = node_image.size_bytes.unwrap_or(0) as u64;
+                            let node_image_names =
+                                node_image.names.expect("node image names must be present");
+                            for node_image_name in node_image_names {
+                                if let Some(idx) = node_image_name.find('@') {
+                                    let node_image_digest = &node_image_name[idx + 1..];
+                                    match digest_map.get(node_image_digest) {
                                         Some(existing) if *existing >= size => {}
                                         _ => {
-                                            digest_map.insert(digest.to_string(), size);
+                                            digest_map.insert(node_image_digest.to_string(), size);
                                         }
                                     }
                                 }
