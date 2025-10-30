@@ -240,52 +240,53 @@ impl K8sClient {
             .map(|pi| pi.node_name.clone())
             .collect();
 
+        node_to_digest_size.reserve(all_nodes.len());
+
         let Ok(node_list) = nodes_api.list(&ListParams::default()).await else {
             info!("Skipping node image size enrichment due to node list failure");
             return Ok(all_images);
         };
 
-        for node in node_list {
-            let Some(name) = node.metadata.name.clone() else {
-                continue;
-            };
-            if !all_nodes.contains(&name) {
-                continue;
-            }
-            let Some(node_status) = node.status else {
-                continue;
-            };
-            let Some(node_images) = node_status.images else {
-                continue;
-            };
+        node_list
+            .into_iter()
+            .filter_map(|node| {
+                let name = node.metadata.name.clone()?;
+                if !all_nodes.contains(&name) {
+                    return None;
+                }
+                let node_images = node.status?.images?;
 
-            let digest_map: std::collections::HashMap<String, u64> = node_images
-                .into_iter()
-                .filter_map(|img| {
-                    let size = img.size_bytes.unwrap_or(0) as u64;
-                    img.names.and_then(|names| {
-                        names.iter().find_map(|name| {
-                            name.find('@')
-                                .map(|idx| (name[idx + 1..].to_string(), size))
+                let digest_map: std::collections::HashMap<String, u64> = node_images
+                    .into_iter()
+                    .filter_map(|img| {
+                        let size = img.size_bytes.unwrap_or(0) as u64;
+                        img.names.and_then(|names| {
+                            names.iter().find_map(|name| {
+                                name.find('@')
+                                    .map(|idx| (name[idx + 1..].to_string(), size))
+                            })
                         })
                     })
-                })
-                .fold(
-                    std::collections::HashMap::new(),
-                    |mut acc, (digest, size)| {
-                        acc.entry(digest)
-                            .and_modify(|v| *v = (*v).max(size))
-                            .or_insert(size);
-                        acc
-                    },
-                );
+                    .fold(
+                        std::collections::HashMap::new(),
+                        |mut acc, (digest, size)| {
+                            acc.entry(digest)
+                                .and_modify(|v| *v = (*v).max(size))
+                                .or_insert(size);
+                            acc
+                        },
+                    );
 
-            if !digest_map.is_empty() {
+                if digest_map.is_empty() {
+                    None
+                } else {
+                    Some((name, digest_map))
+                }
+            })
+            .for_each(|(name, digest_map)| {
                 node_to_digest_size.insert(name, digest_map);
-            }
-        }
+            });
 
-        // Assign sizes to images where possible
         all_images
             .iter_mut()
             .filter(|img| img.image_size.is_empty() && !img.node_name.is_empty())
