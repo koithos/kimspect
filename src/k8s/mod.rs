@@ -287,10 +287,12 @@ impl K8sClient {
             .iter_mut()
             .filter(|img| img.image_size.is_empty() && !img.node_name.is_empty())
             .for_each(|img| {
-                node_to_digest_size
+                if let Some(size) = node_to_digest_size
                     .get(&img.node_name)
                     .and_then(|dmap| dmap.get(&img.digest))
-                    .map(|size| img.image_size = format_bytes(*size));
+                {
+                    img.image_size = format_bytes(*size);
+                }
             });
 
         info!(
