@@ -1,6 +1,7 @@
 use crate::utils::{strip_registry, KNOWN_REGISTRIES};
 use anyhow::{Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
+use k8s_openapi::api::core::v1::Node;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{api::ListParams, Api, Client};
 use thiserror::Error;
@@ -25,6 +26,8 @@ pub struct PodImage {
     pub registry: String,
     /// Image digest (if available)
     pub digest: String,
+    /// Image size in a human readable format (if available)
+    pub image_size: String,
 }
 
 /// Errors that can occur when interacting with Kubernetes
@@ -221,6 +224,76 @@ impl K8sClient {
                 "Filtered images by registry"
             );
         }
+
+        let nodes_api: Api<Node> = Api::all(self.client.clone());
+
+        // hashmap: node_name -> { digest -> size_bytes }
+        let mut node_to_digest_size: std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, u64>,
+        > = std::collections::HashMap::new();
+
+        // Determine needed nodes (assume every image has a digest)
+        let all_nodes: std::collections::HashSet<String> = all_images
+            .iter()
+            .filter(|pi| !pi.node_name.is_empty())
+            .map(|pi| pi.node_name.clone())
+            .collect();
+
+        node_to_digest_size.reserve(all_nodes.len());
+
+        let Ok(node_list) = nodes_api.list(&ListParams::default()).await else {
+            info!("Skipping node image size enrichment due to node list failure");
+            return Ok(all_images);
+        };
+
+        node_list
+            .into_iter()
+            .filter_map(|node| {
+                let name = node.metadata.name.clone()?;
+                if !all_nodes.contains(&name) {
+                    return None;
+                }
+                let node_images = node.status?.images?;
+
+                let digest_map: std::collections::HashMap<String, u64> = node_images
+                    .into_iter()
+                    .filter_map(|img| {
+                        let size = img.size_bytes.unwrap_or(0) as u64;
+                        img.names.and_then(|names| {
+                            names.iter().find_map(|name| {
+                                name.find('@')
+                                    .map(|idx| (name[idx + 1..].to_string(), size))
+                            })
+                        })
+                    })
+                    .fold(
+                        std::collections::HashMap::new(),
+                        |mut acc, (digest, size)| {
+                            acc.entry(digest)
+                                .and_modify(|v| *v = (*v).max(size))
+                                .or_insert(size);
+                            acc
+                        },
+                    );
+
+                (!digest_map.is_empty()).then_some((name, digest_map))
+            })
+            .for_each(|(name, digest_map)| {
+                node_to_digest_size.insert(name, digest_map);
+            });
+
+        all_images
+            .iter_mut()
+            .filter(|img| img.image_size.is_empty() && !img.node_name.is_empty())
+            .for_each(|img| {
+                if let Some(size) = node_to_digest_size
+                    .get(&img.node_name)
+                    .and_then(|dmap| dmap.get(&img.digest))
+                {
+                    img.image_size = format_bytes(*size);
+                }
+            });
 
         info!(
             total_images = all_images.len(),
@@ -528,16 +601,39 @@ pub fn split_image(image: &str) -> (String, String) {
 ///
 /// * `Option<String>` - The container digest if available
 fn extract_container_digest(pod: &Pod, container_name: &str) -> Option<String> {
-    pod.status
+    let image_id = pod
+        .status
         .as_ref()?
         .container_statuses
         .as_ref()?
         .iter()
         .find(|cs| cs.name == container_name)?
         .image_id
-        .split(':')
-        .nth(1)
-        .map(String::from)
+        .clone();
+
+    // Try to find digest after '@' first (docker-pullable format)
+    image_id
+        .find('@')
+        .map(|at| &image_id[at + 1..])
+        .filter(|digest| digest.contains(':'))
+        .map(|digest| digest.to_string())
+        .or_else(|| {
+            ["sha256:", "sha512:"]
+                .iter()
+                .find_map(|algo| image_id.find(algo))
+                .map(|pos| image_id[pos..].to_string())
+        })
+}
+
+/// Format bytes to a human-readable string (e.g., 123.4MiB)
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: [(u64, &str); 3] = [(1_073_741_824, "GiB"), (1_048_576, "MiB"), (1024, "KiB")];
+
+    UNITS
+        .iter()
+        .find(|(unit, _)| bytes >= *unit)
+        .map(|(unit, suffix)| format!("{:.1}{}", bytes as f64 / *unit as f64, suffix))
+        .unwrap_or_else(|| format!("{}B", bytes))
 }
 
 /// Process a pod to extract information about its container images
@@ -577,6 +673,7 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
                     node_name: node_name.clone(),
                     registry,
                     digest,
+                    image_size: String::new(),
                 });
             }
         }
