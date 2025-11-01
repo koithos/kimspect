@@ -36,8 +36,12 @@ pub enum GetImages {
         pod: Option<String>,
 
         /// Filter pods by container image registry
-        #[arg(short = 'R', long = "registry")]
+        #[arg(short = 'R', long = "registry", conflicts_with = "exclude_registry")]
         registry: Option<String>,
+
+        /// Exclude pods by container image registry
+        #[arg(long = "exclude-registry", conflicts_with = "registry")]
+        exclude_registry: Option<String>,
 
         /// Query pods across all namespaces
         #[arg(short = 'A', long = "all-namespaces", conflicts_with = "namespace")]

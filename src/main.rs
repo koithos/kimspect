@@ -40,6 +40,7 @@ async fn process_commands(args: Args, client: K8sClient) -> KimspectResult<()> {
                 node,
                 pod,
                 registry,
+                exclude_registry,
                 all_namespaces,
                 output,
                 ..
@@ -49,6 +50,7 @@ async fn process_commands(args: Args, client: K8sClient) -> KimspectResult<()> {
                     node = ?node,
                     pod = ?pod,
                     registry = ?registry,
+                    exclude_registry = ?exclude_registry,
                     all_namespaces = %all_namespaces,
                     output = ?output,
                     "Processing get images command"
@@ -60,6 +62,7 @@ async fn process_commands(args: Args, client: K8sClient) -> KimspectResult<()> {
                         node.as_deref(),
                         pod.as_deref(),
                         registry.as_deref(),
+                        exclude_registry.as_deref(),
                         all_namespaces,
                     )
                     .await
