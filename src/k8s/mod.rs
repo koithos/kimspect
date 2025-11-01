@@ -160,6 +160,7 @@ impl K8sClient {
         node = ?node_name,
         pod = ?pod_name,
         registry = ?registry_filter,
+        exclude_registry = ?exclude_registry_filter,
         all_namespaces = %all_namespaces
     ))]
     pub async fn get_pod_images(
@@ -168,6 +169,7 @@ impl K8sClient {
         node_name: Option<&str>,
         pod_name: Option<&str>,
         registry_filter: Option<&str>,
+        exclude_registry_filter: Option<&str>,
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
         debug!(
@@ -175,6 +177,7 @@ impl K8sClient {
             node = ?node_name,
             pod = ?pod_name,
             registry = ?registry_filter,
+            exclude_registry = ?exclude_registry_filter,
             all_namespaces = %all_namespaces,
             "Fetching pod images"
         );
@@ -221,7 +224,19 @@ impl K8sClient {
             debug!(
                 before = before_count,
                 after = all_images.len(),
+                registry = %registry_filter,
                 "Filtered images by registry"
+            );
+        }
+
+        if let Some(exclude_registry_filter) = exclude_registry_filter {
+            let before_count = all_images.len();
+            all_images.retain(|image| image.registry != exclude_registry_filter);
+            debug!(
+                before = before_count,
+                after = all_images.len(),
+                registry = %exclude_registry_filter,
+                "Filtered images by registry (exclusion)"
             );
         }
 
