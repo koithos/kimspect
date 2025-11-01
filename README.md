@@ -73,6 +73,12 @@ kimspect get images --all-namespaces
 # Filter images by registry
 kimspect get images --registry "docker.io" --namespace kube-system
 
+# Show all images EXCEPT from docker.io
+kimspect get images --exclude-registry "docker.io" --all-namespaces
+
+# Show all images EXCEPT from specific node
+kimspect get images --exclude-registry "docker.io" -n kube-system -o wide
+
 # Filter images by registry in a specific node
 kimspect get images --registry "quay.io" --node node-name
 
