@@ -236,7 +236,7 @@ impl K8sClient {
                 before = before_count,
                 after = all_images.len(),
                 registry = %exclude_registry_filter,
-                "Filtered images by registry (exclusion)"
+                "Filtered images by exclude_registry"
             );
         }
 
