@@ -169,7 +169,7 @@ impl K8sClient {
         node_name: Option<&str>,
         pod_name: Option<&str>,
         registry_filter: Option<&str>,
-        exclude_registry_filter: Option<&str>,
+        exclude_registry_filter: &[String],
         all_namespaces: bool,
     ) -> Result<Vec<PodImage>> {
         debug!(
@@ -229,13 +229,13 @@ impl K8sClient {
             );
         }
 
-        if let Some(exclude_registry_filter) = exclude_registry_filter {
+        if !exclude_registry_filter.is_empty() {
             let before_count = all_images.len();
-            all_images.retain(|image| image.registry != exclude_registry_filter);
+            all_images.retain(|image| !exclude_registry_filter.contains(&image.registry));
             debug!(
                 before = before_count,
                 after = all_images.len(),
-                registry = %exclude_registry_filter,
+                registries = ?exclude_registry_filter,
                 "Filtered images by exclude_registry"
             );
         }
