@@ -4,8 +4,8 @@ Set FontSize 13
 Set FontFamily "Mononoki"
 Set Padding 10
 Set LineHeight 1.2
-Set Width 1920
-Set Height 600
+Set Width 2100
+Set Height 700
 Set TypingSpeed 120ms
 Set WindowBar Colorful
 Set BorderRadius 10
