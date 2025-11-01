@@ -9,7 +9,7 @@
 </picture>
 
 <picture>
-  <img alt="A GIF produced by the VHS code above" src=".vhs/demo-wide.gif">
+  <img width=1920 alt="A GIF produced by the VHS code above" src=".vhs/demo-wide.gif">
 </picture>
 
 ## Features
