@@ -4,6 +4,12 @@
 
 **kimspect** is a kubernetes container image inspection tool that provides comprehensive visibility into container images running inside your cluster. kimspect can get image information by pod, namespace, and node. Built for performance and reliability, kimspect enables container image insights with a simple, intuitive command-line interface.
 
+<picture>
+  <img alt="normal demo of kimspect" src=".vhs/demo-normal.gif">
+</picture>
+
+_For more demos, checkout the .vhs folder_
+
 ## Features
 
 - [x] List images in a cluster based on different filters:
