@@ -21,7 +21,43 @@ fn test_cli_parse_get_images_default() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
+        assert!(!all_namespaces);
+        assert_eq!(output, OutputFormat::Normal);
+    } else {
+        panic!("Expected GetImages::Images variant");
+    }
+}
+
+#[test]
+fn test_cli_parse_get_images_multiple_exclude_registry() {
+    let args = Args::parse_from([
+        "kimspect",
+        "get",
+        "images",
+        "--exclude-registry",
+        "docker.io",
+        "--exclude-registry",
+        "ghcr.io",
+    ]);
+
+    let Commands::Get { resource } = args.command;
+    if let GetImages::Images {
+        namespace,
+        node,
+        pod,
+        registry,
+        exclude_registry,
+        all_namespaces,
+        output,
+        kubeconfig: _,
+    } = resource
+    {
+        assert_eq!(namespace, "default");
+        assert!(node.is_none());
+        assert!(pod.is_none());
+        assert!(registry.is_none());
+        assert_eq!(exclude_registry, vec!["docker.io", "ghcr.io"]);
         assert!(!all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -48,7 +84,7 @@ fn test_cli_parse_get_images_namespace() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(!all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -76,7 +112,7 @@ fn test_cli_parse_get_images_all_namespaces() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -104,7 +140,7 @@ fn test_cli_parse_get_images_all_namespaces_short() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -132,7 +168,7 @@ fn test_cli_parse_get_images_node() {
         assert_eq!(node, Some("worker1".to_string()));
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(!all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -167,7 +203,7 @@ fn test_cli_parse_get_images_pod_and_all_namespaces() {
         assert!(node.is_none());
         assert_eq!(pod, Some("nginx-pod".to_string()));
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(all_namespaces);
         assert_eq!(output, OutputFormat::Normal);
     } else {
@@ -195,7 +231,7 @@ fn test_cli_parse_get_images_wide_output() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(!all_namespaces);
         assert_eq!(output, OutputFormat::Wide);
     } else {
@@ -223,7 +259,7 @@ fn test_cli_parse_get_images_wide_output_long() {
         assert!(node.is_none());
         assert!(pod.is_none());
         assert!(registry.is_none());
-        assert!(exclude_registry.is_none());
+        assert!(exclude_registry.is_empty());
         assert!(!all_namespaces);
         assert_eq!(output, OutputFormat::Wide);
     } else {
