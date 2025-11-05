@@ -13,7 +13,7 @@ rust-version = "1.90"
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
 k8s-openapi = { version = "0.26", features = ["v1_31"] }
-kube = { version = "2.0", features = ["runtime"] }
+kube = { version = "2.0", features = ["runtime", "openssl-tls"], default-features = false }
 tokio = { version = "1.44.2", features = ["full"] }
 anyhow = "1.0"
 colored = "3.0"
@@ -21,6 +21,7 @@ prettytable-rs = "0.10"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter", "chrono"] }
 thiserror = "2.0.12"
+openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
 tokio-test = "0.4"
