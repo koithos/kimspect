@@ -34,24 +34,9 @@ pub fn init_logging(level: Level, format: LogFormat) -> Result<()> {
 ///
 /// * `Result<EnvFilter>` - The configured filter layer or error
 fn create_filter_layer(level: Level) -> Result<EnvFilter> {
-    Ok(EnvFilter::try_from_default_env()
+    EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(format!("{}", level)))
-        .context("Failed to create environment filter")?
-        .add_directive(
-            "rustls=ERROR"
-                .parse()
-                .context("Failed to parse rustls directive")?,
-        )
-        .add_directive(
-            "rustls::client=ERROR"
-                .parse()
-                .context("Failed to parse rustls client directive")?,
-        )
-        .add_directive(
-            "rustls::client::tls13=ERROR"
-                .parse()
-                .context("Failed to parse rustls tls13 directive")?,
-        ))
+        .context("Failed to create environment filter")
 }
 
 /// Initialize JSON format logging
