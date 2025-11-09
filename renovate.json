@@ -16,76 +16,52 @@
   "commitMessagePrefix": "chore(deps): ",
   "packageRules": [
     {
-      "matchCategories": [
-        "rust"
-      ],
-      "enabled": true
+      "description": "Enable and label Rust updates",
+      "matchManagers": ["cargo"],
+      "enabled": true,
+      "labels": ["dependencies", "rust"]
     },
     {
       "description": "Automatically merge minor and patch updates for Rust dependencies",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
+      "description": "Manage pre-commit hook updates",
+      "matchManagers": ["pre-commit"],
+      "labels": ["dependencies", "pre-commit"],
+      "automerge": false
+    },
+    {
       "description": "Require manual approval for major version updates",
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "automerge": false
     },
     {
       "description": "Group all non-major updates together",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "non-major dependencies",
       "groupSlug": "non-major-deps"
     },
     {
       "description": "Disable updates for dev dependencies from being auto-merged",
-      "matchDepTypes": [
-        "dev-dependencies"
-      ],
+      "matchDepTypes": ["dev-dependencies"],
       "automerge": false,
-      "labels": [
-        "type: dependencies",
-        "kind: dev-dependencies"
-      ]
+      "labels": ["type: dependencies", "kind: dev-dependencies"]
     },
     {
       "description": "Fast-track patch updates with tight constraints",
-      "matchUpdateTypes": [
-        "patch"
-      ],
+      "matchUpdateTypes": ["patch"],
       "groupName": "patch updates",
-      "schedule": [
-        "after 10pm every weekday",
-        "every weekend",
-        "before 5am every weekday"
-      ]
-    },
-    {
-      "description": "Add labels to all Rust crate PRs",
-      "matchDatasources": [
-        "crate"
-      ],
-      "labels": [
-        "dependencies",
-        "rust"
-      ]
+      "schedule": ["after 10pm and before 5am every weekday", "every weekend"]
     }
   ],
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": [
-      "security"
-    ],
+    "labels": ["security"],
     "automerge": false
   }
 }
