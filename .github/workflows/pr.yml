@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Clippy
         run: cargo clippy -- -D warnings
         shell: bash
@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate Rust build for ${{ matrix.platform.target }}
         uses: ./.github/actions/build-cli
         with:
@@ -42,7 +42,7 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup Kubernetes
         uses: helm/kind-action@v1.12.0
         with:
