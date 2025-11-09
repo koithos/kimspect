@@ -16,7 +16,6 @@
   },
   "prCreation": "immediate",
   "prConcurrentLimit": 3,
-  "semanticCommits": "enabled",
   "commitMessagePrefix": "chore(deps): ",
   "packageRules": [
     {
@@ -47,11 +46,7 @@
       "description": "Fast-track patch updates with tight constraints",
       "matchUpdateTypes": ["patch"],
       "groupName": "patch updates",
-      "schedule": [
-        "after 10pm every weekday",
-        "before 5am every weekday",
-        "anytime on weekend"
-      ]
+      "schedule": ["after 10pm and before 5am every weekday", "every weekend"]
     },
     {
       "description": "Add labels to all Rust crate PRs",
