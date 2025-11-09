@@ -1,0 +1,67 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "schedule:weekly"
+  ],
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "rust": {
+    "enabled": true
+  },
+  "prCreation": "immediate",
+  "prConcurrentLimit": 3,
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "chore(deps): ",
+  "packageRules": [
+    {
+      "description": "Automatically merge minor and patch updates for Rust dependencies",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Require manual approval for major version updates",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "Group all non-major updates together",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major-deps"
+    },
+    {
+      "description": "Disable updates for dev dependencies from being auto-merged",
+      "matchDepTypes": ["dev-dependencies"],
+      "automerge": false,
+      "labels": ["type: dependencies", "kind: dev-dependencies"]
+    },
+    {
+      "description": "Fast-track patch updates with tight constraints",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "patch updates",
+      "schedule": [
+        "after 10pm every weekday",
+        "before 5am every weekday",
+        "anytime on weekend"
+      ]
+    },
+    {
+      "description": "Add labels to all Rust crate PRs",
+      "matchDatasources": ["crate"],
+      "labels": ["dependencies", "rust"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "automerge": false
+  }
+}
