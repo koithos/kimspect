@@ -12,7 +12,7 @@ jobs:
       tag_version: ${{ steps.get_version.outputs.TAG_VERSION }}
       cargo_version: ${{ steps.get_version.outputs.CARGO_VERSION }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install toml-cli
         run: cargo install toml-cli@0.2.3
       - name: Get versions
@@ -44,7 +44,7 @@ jobs:
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Building ${{ matrix.platform.os }}-${{ matrix.platform.target }}
         uses: ./.github/actions/build-cli
         with:
@@ -83,7 +83,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Download All Build Artifacts
         uses: actions/download-artifact@v6
         with:
@@ -124,7 +124,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Publish to crates.io
         uses: actions-rs/cargo@v1
         with:
