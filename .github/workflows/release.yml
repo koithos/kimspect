@@ -59,7 +59,7 @@ jobs:
       - name: Create compressed binary for krew on Windows environment
         if: matrix.platform.os == 'windows-latest'
         run: |
-          Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
+          Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/ -Update
           Compress-Archive -Path target/${{ matrix.platform.target }}/release/kimspect.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.zip
           Move-Item -Path target/${{ matrix.platform.target }}/release/kimspect.exe -Destination target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.exe
 
