@@ -1,0 +1,5 @@
+# release.toml
+# Configuration for cargo-release
+
+# Disable the publishing step, as the GitHub Actions workflow handles it.
+publish = false
