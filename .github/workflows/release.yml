@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: [release]
+    needs: [update-homebrew-and-krew]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -187,7 +187,7 @@ jobs:
     concurrency:
       group: release-plz-${{ github.ref }}
       cancel-in-progress: false
-    needs: [release]
+    needs: [update-homebrew-and-krew]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
