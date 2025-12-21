@@ -5,35 +5,8 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  check_version:
-    name: Check Cargo.toml version matches Git tag
-    runs-on: ubuntu-latest
-    outputs:
-      tag_version: ${{ steps.get_version.outputs.TAG_VERSION }}
-      cargo_version: ${{ steps.get_version.outputs.CARGO_VERSION }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install toml-cli
-        run: cargo install toml-cli@0.2.3
-      - name: Get versions
-        id: get_version
-        run: |
-          TAG_VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
-          CARGO_VERSION=$(toml get Cargo.toml package.version | tr -d '"')
-          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
-          echo "CARGO_VERSION=$CARGO_VERSION" >> $GITHUB_OUTPUT
-      - name: Verify versions match
-        run: |
-          echo "Git tag version: ${{ steps.get_version.outputs.tag_version }}"
-          echo "Cargo.toml version: ${{ steps.get_version.outputs.cargo_version }}"
-          if [ "${{ steps.get_version.outputs.tag_version }}" -le "${{ steps.get_version.outputs.cargo_version }}" ]; then
-            echo "Error: Git tag version (${{ steps.get_version.outputs.tag_version }}) does not match Cargo.toml version (${{ steps.get_version.outputs.cargo_version }})."
-            # echo "Please run 'scripts/cargo_release.sh' to update the cargo version before generating tag."
-            exit 1
-          fi
   build:
     name: Build multi-platform binaries
-    needs: check_version
     strategy:
       fail-fast: false
       matrix:
@@ -117,29 +90,3 @@ jobs:
           amd64_artifact_path: dist/x86_64-apple-darwin/kimspect-x86_64-apple-darwin
           arm64_artifact_path: dist/aarch64-apple-darwin/kimspect-aarch64-apple-darwin
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-
-  release-plz:
-    name: Release-plz release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    needs: [release-github-krew-and-homebrew]
-    concurrency:
-      group: release-plz
-      cancel-in-progress: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - id: release-plz
-        name: Run release-plz
-        uses: release-plz/action@v0.5
-        with:
-          command: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
