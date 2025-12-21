@@ -116,7 +116,7 @@ jobs:
       - name: Update new version for kimspect in krew-index
         uses: rajatjindal/krew-release-bot@v0.0.47
         with:
-          krew_template_file: .krew/kimspect
+          krew_template_file: .krew/kimspect.yml
 
   release-cargo:
     name: Release to cargo.io
