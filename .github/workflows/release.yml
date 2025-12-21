@@ -116,18 +116,66 @@ jobs:
         with:
           krew_template_file: .krew/kimspect.yml
 
-  release-cargo:
-    name: Release to cargo.io
+  # release-cargo:
+  #   name: Release to cargo.io
+  #   runs-on: ubuntu-latest
+  #   needs: [release]
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v6
+  #     - name: Publish to crates.io
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: publish
+  #       env:
+  #         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  release-plz-release:
+    name: Release-plz release
     runs-on: ubuntu-latest
-    needs: [release]
     permissions:
       contents: write
+    needs: [release]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Publish to crates.io
-        uses: actions-rs/cargo@v1
         with:
-          command: publish
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Create a PR with the new versions and changelog, preparing the next release.
+  release-plz-pr:
+    name: Release-plz PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: release-plz-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
