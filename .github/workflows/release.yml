@@ -61,7 +61,7 @@ jobs:
         run: |
           Copy-Item -Path LICENSE -Destination target/${{ matrix.platform.target }}/release/
           Compress-Archive -Path target/${{ matrix.platform.target }}/release/kimspect.exe, target/${{ matrix.platform.target }}/release/LICENSE -DestinationPath target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.zip -Update
-          Move-Item -Path target/${{ matrix.platform.target }}/release/kimspect.exe -Destination target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.exe
+          Move-Item -Path target/${{ matrix.platform.target }}/release/kimspect.exe -Destination target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.exe -Force
 
       - name: Create compressed binary for krew on Unix-like environments
         if: matrix.platform.os != 'windows-latest'
@@ -187,7 +187,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   release-github-artifacts:
-    name: upload github artifacts to release
+    name: Upload github artifacts to release
     runs-on: ubuntu-latest
     permissions:
       contents: write
