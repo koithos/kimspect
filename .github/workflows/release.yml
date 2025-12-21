@@ -151,31 +151,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v6
-        with:
-          path: dist/
-      - name: List downloaded files
-        run: ls -lahR dist/
-
-      - id: release_tag_processing
-        name: Get release tag
+      - name: push release info to output
         env:
           RELEASES: ${{ steps.release-plz.outputs.releases }}
         run: |
           RELEASE_TAG=$(echo "$RELEASES" | jq -r '.[0].tag')
           echo "release_tag: $RELEASE_TAG"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub release and upload assets
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/**/*
-          tag_name: ${{ steps.release_tag_processing.outputs.release_tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
   # Create a PR with the new versions and changelog, preparing the next release.
   release-plz-pr:
@@ -203,3 +185,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  release-github-artifacts:
+    name: upload github artifacts to release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [release-plz-release]
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: dist/
+      - name: List downloaded files
+        run: ls -lahR dist/
+
+      - name: Create GitHub release and upload assets
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*
+          tag_name: ${{ needs.release-plz-release.outputs.release_tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
