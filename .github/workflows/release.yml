@@ -79,7 +79,7 @@ jobs:
             target/${{ matrix.platform.target }}/release/*.exe
             target/${{ matrix.platform.target }}/release/*.tar.gz
 
-  release:
+  update-homebrew-and-krew:
     name: Update Homebrew & Krew
     runs-on: ubuntu-latest
     # needs: [update_version, build]
