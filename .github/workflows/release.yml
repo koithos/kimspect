@@ -65,7 +65,7 @@ jobs:
           tar -czvf target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kimspect LICENSE
           mv target/${{ matrix.platform.target }}/release/kimspect target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.platform.target }}
           path: |
@@ -87,7 +87,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Download All Build Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: dist/
       - name: List downloaded files
