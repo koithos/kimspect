@@ -38,7 +38,7 @@ cargo install kimspect
 If you are on macOS and use Homebrew, you can install kimspect via our tap:
 
 ```bash
-brew tap koithos/kimspect
+brew tap koithos/cli/kimspect
 brew install kimspect
 ```
 

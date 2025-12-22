@@ -1,5 +1,5 @@
 # Formula/kimspect.rb
-class kimspect < Formula
+class Kimspect < Formula
   desc "A CLI tool for kimspect"
   homepage "https://github.com/koithos/kimspect"
   version "${version}"
