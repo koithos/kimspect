@@ -25,3 +25,10 @@ thiserror = "2.0.12"
 [dev-dependencies]
 tokio-test = "0.4"
 mockall = "0.14"
+
+[profile.release]
+opt-level = "z"        # or "s" (slightly faster, slightly larger)
+lto = true             # link-time optimization
+codegen-units = 1      # better optimization across crate boundaries
+panic = "abort"        # removes unwinding machinery
+strip = true
