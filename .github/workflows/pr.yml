@@ -37,7 +37,6 @@ jobs:
         with:
           runner_os: ${{ matrix.platform.os }}
           target_platform: ${{ matrix.platform.target }}
-          rust_toolchain: "stable"
   test:
     name: test
     runs-on: ubuntu-latest
