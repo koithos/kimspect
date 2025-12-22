@@ -1,8 +1,0 @@
-[workspace]
-pr_branch_prefix = "release-" # PR branch prefix
-pr_labels = ["release"] # add the `release` label to the release Pull Request
-publish_timeout = "10m" # set a timeout for `cargo publish`
-release_commits = "^feat:" # prepare release only if at least one commit matches a regex
-
-[changelog]
-protect_breaking_commits = true # always include commits with breaking changes in the changelog
