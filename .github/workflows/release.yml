@@ -104,7 +104,7 @@ jobs:
       - name: Update Homebrew Tap
         uses: ./.github/actions/update-homebrew
         with:
-          tap_repo: koithos/homebrew-kimspect
+          tap_repo: koithos/homebrew-cli
           release_tag: ${{ github.ref_name }}
           repository: ${{ github.repository }}
           amd64_artifact_name: kimspect-x86_64-apple-darwin
