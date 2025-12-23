@@ -1,9 +1,9 @@
-use crate::utils::{strip_registry, KNOWN_REGISTRIES};
+use crate::utils::{KNOWN_REGISTRIES, strip_registry};
 use anyhow::{Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Node;
 use k8s_openapi::api::core::v1::Pod;
-use kube::{api::ListParams, Api, Client};
+use kube::{Api, Client, api::ListParams};
 use thiserror::Error;
 use tracing::{debug, error, info, instrument};
 

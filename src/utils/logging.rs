@@ -1,7 +1,7 @@
 use crate::LogFormat;
 use anyhow::{Context, Result};
 use tracing::Level;
-use tracing_subscriber::{fmt::time::ChronoUtc, prelude::*, EnvFilter};
+use tracing_subscriber::{EnvFilter, prelude::*};
 
 /// Initialize the structured logging system with configurable formatting
 ///
@@ -17,7 +17,10 @@ pub fn init_logging(level: Level, format: LogFormat) -> Result<()> {
     let filter_layer = create_filter_layer(level)?;
 
     match format {
-        LogFormat::Json => init_json_logging(filter_layer),
+        LogFormat::Json => {
+            eprintln!("Warning: JSON logging format is not available. Using plain text format.");
+            init_plain_logging(filter_layer)
+        }
         LogFormat::Plain => init_plain_logging(filter_layer),
     }
 
@@ -54,29 +57,6 @@ fn create_filter_layer(level: Level) -> Result<EnvFilter> {
         ))
 }
 
-/// Initialize JSON format logging
-///
-/// # Arguments
-///
-/// * `filter_layer` - The filter layer to use
-fn init_json_logging(filter_layer: EnvFilter) {
-    let json_layer = tracing_subscriber::fmt::layer()
-        .with_timer(ChronoUtc::rfc_3339())
-        .with_target(true)
-        .with_thread_ids(true)
-        .with_thread_names(true)
-        .with_file(true)
-        .with_line_number(true)
-        .json()
-        .with_current_span(true)
-        .with_span_list(true);
-
-    tracing_subscriber::registry()
-        .with(filter_layer)
-        .with(json_layer)
-        .init();
-}
-
 /// Initialize plain text format logging
 ///
 /// # Arguments
@@ -84,7 +64,6 @@ fn init_json_logging(filter_layer: EnvFilter) {
 /// * `filter_layer` - The filter layer to use
 fn init_plain_logging(filter_layer: EnvFilter) {
     let plain_layer = tracing_subscriber::fmt::layer()
-        .with_timer(ChronoUtc::rfc_3339())
         .with_target(true)
         .with_thread_ids(true)
         .with_thread_names(true)

@@ -1,8 +1,8 @@
 use anyhow::Context;
 use clap::Parser;
 use kimspect::{
-    display_pod_images, display_registries, logging, Args, Commands, GetImages, K8sClient,
-    KimspectResult,
+    Args, Commands, GetImages, K8sClient, KimspectResult, display_pod_images, display_registries,
+    logging,
 };
 use tracing::{debug, info, instrument, warn};
 

@@ -1,6 +1,6 @@
-use crate::{k8s::PodImage, OutputFormat};
+use crate::{OutputFormat, k8s::PodImage};
 use anyhow::Result;
-use prettytable::{format::FormatBuilder, Cell, Row, Table};
+use prettytable::{Cell, Row, Table, format::FormatBuilder};
 use tracing::warn;
 
 pub mod logging;

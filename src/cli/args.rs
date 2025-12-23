@@ -1,5 +1,5 @@
-use crate::cli::formats::LogFormat;
 use crate::cli::Commands;
+use crate::cli::formats::LogFormat;
 use clap::Parser;
 use std::path::PathBuf;
 

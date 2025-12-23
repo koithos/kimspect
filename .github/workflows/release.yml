@@ -50,7 +50,6 @@ jobs:
         with:
           runner_os: ${{ matrix.platform.os }}
           target_platform: ${{ matrix.platform.target }}
-          rust_toolchain: "stable"
       - name: Create compressed binary for krew on Windows environment
         if: matrix.platform.os == 'windows-latest'
         run: |
