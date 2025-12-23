@@ -1,6 +1,6 @@
 [package]
 name = "kimspect"
-version = "0.0.41"
+version = "0.0.42"
 authors = ["Ali Abbas Jaffri <ali.abbasjaffri@live.com>"]
 description = "The missing utility in kubectl to help you inspect container images on your pods and nodes."
 keywords = ["k8s", "search", "pattern"]
