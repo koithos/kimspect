@@ -113,7 +113,7 @@ jobs:
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update new version for kimspect in krew-index
-        uses: rajatjindal/krew-release-bot@v0.0.47
+        uses: rajatjindal/krew-release-bot@v0.0.50
         with:
           krew_template_file: .krew/kimspect.yml
 
