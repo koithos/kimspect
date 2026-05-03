@@ -168,4 +168,4 @@ This project uses `cargo-release` to automate the release process, ensuring that
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+see the LICENSE file for details.
