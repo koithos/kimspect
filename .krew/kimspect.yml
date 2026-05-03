@@ -16,7 +16,7 @@ spec:
         matchLabels:
           os: linux
           arch: amd64
-      {{addURIAndSha "https://github.com/koithos/kimspect/releases/download/{{ .TagName }}/kimspect-x86_64-unknown-linux-gnu.tar.gz" .TagName | indent 6 }}
+      {{addURIAndSha "https://github.com/koithos/kimspect/releases/download/{{ .TagName }}/kimspect-x86_64-unknown-linux-musl.tar.gz" .TagName | indent 6 }}
       bin: kimspect
     - selector:
         matchLabels:
