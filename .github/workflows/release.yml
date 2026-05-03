@@ -64,7 +64,7 @@ jobs:
           tar -czvf target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}.tar.gz -C target/${{ matrix.platform.target }}/release kimspect LICENSE
           mv target/${{ matrix.platform.target }}/release/kimspect target/${{ matrix.platform.target }}/release/kimspect-${{ matrix.platform.target }}
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform.target }}
           path: |
@@ -86,7 +86,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Download All Build Artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: dist/
       - name: List downloaded files
@@ -113,7 +113,7 @@ jobs:
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update new version for kimspect in krew-index
-        uses: rajatjindal/krew-release-bot@v0.0.47
+        uses: rajatjindal/krew-release-bot@v0.0.50
         with:
           krew_template_file: .krew/kimspect.yml
 
