@@ -1,10 +1,21 @@
 use crate::utils::{KNOWN_REGISTRIES, strip_registry};
 use anyhow::{Context, Result};
+use hyper_timeout::TimeoutConnector;
+use hyper_util::{
+    client::legacy::connect::{HttpConnector, proxy::SocksV5},
+    rt::TokioExecutor,
+};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Node;
 use k8s_openapi::api::core::v1::Pod;
-use kube::{Api, Client, api::ListParams};
+use kube::{
+    Api, Client, Config,
+    api::ListParams,
+    client::ConfigExt,
+};
+use std::time::Duration;
 use thiserror::Error;
+use tower::{BoxError, ServiceBuilder};
 use tracing::{debug, error, info, instrument};
 
 /// Represents a container image running in a Kubernetes pod
@@ -60,15 +71,23 @@ impl K8sClient {
     ///
     /// * `Result<Self>` - A new K8sClient instance or an error if initialization fails
     #[instrument(skip_all)]
-    pub async fn new() -> Result<Self> {
+    pub async fn new(request_timeout: Duration) -> Result<Self> {
         debug!("Initializing Kubernetes client");
 
         let kubeconfig_path = Self::get_kubeconfig_path()?;
         debug!(path = %kubeconfig_path, "Using kubeconfig path");
 
-        let client = Client::try_default()
+        let mut config = Config::infer()
             .await
-            .context("Failed to create Kubernetes client")?;
+            .context("Failed to infer Kubernetes configuration")?;
+
+        debug!(
+            timeout_secs = request_timeout.as_secs(),
+            "Applying request timeout"
+        );
+        apply_request_timeout(&mut config, request_timeout);
+
+        let client = build_client(config).context("Failed to create Kubernetes client")?;
 
         let k8s_client = Self { client };
 
@@ -125,18 +144,22 @@ impl K8sClient {
             }
             Err(e) => match e {
                 kube::Error::Api(api_err) => {
-                    error!("Kubernetes API error occurred");
-                    Err(
-                        K8sError::ApiError(format!("{} ({})", api_err.message, api_err.reason))
-                            .into(),
-                    )
+                    error!(
+                        code = api_err.code,
+                        reason = %api_err.reason,
+                        message = %api_err.message,
+                        "Kubernetes API error occurred"
+                    );
+                    Err(K8sError::ApiError(format!(
+                        "{} ({}, code {})",
+                        api_err.message, api_err.reason, api_err.code
+                    ))
+                    .into())
                 }
                 _ => {
-                    error!("Failed to connect to Kubernetes cluster");
-                    Err(
-                        K8sError::ConnectionError("Failed to connect to Kubernetes cluster".into())
-                            .into(),
-                    )
+                    let message = format_connection_error(&e);
+                    error!(error = %e, "{message}");
+                    Err(K8sError::ConnectionError(message).into())
                 }
             },
         }
@@ -695,4 +718,369 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     }
 
     pod_images
+}
+
+fn format_connection_error(error: &dyn std::error::Error) -> String {
+    let mut parts = vec![error.to_string()];
+    let mut current = error.source();
+
+    while let Some(source) = current {
+        let source_message = source.to_string();
+        let is_duplicate = parts.last() == Some(&source_message)
+            || parts
+                .last()
+                .is_some_and(|previous| previous.contains(&source_message));
+
+        if !is_duplicate {
+            parts.push(source_message);
+        }
+        current = source.source();
+    }
+
+    let joined = parts.join(" -> caused by: ");
+    let hint = connection_error_hint(&joined);
+
+    if let Some(hint) = hint {
+        format!(
+            "Failed to connect to Kubernetes cluster.\nCause: {joined}\nHint: {hint}"
+        )
+    } else {
+        format!("Failed to connect to Kubernetes cluster.\nCause: {joined}")
+    }
+}
+
+fn apply_request_timeout(config: &mut Config, request_timeout: Duration) {
+    config.connect_timeout = Some(request_timeout);
+    config.read_timeout = Some(request_timeout);
+    config.write_timeout = Some(request_timeout);
+}
+
+fn build_client(config: Config) -> Result<Client> {
+    if let Some(proxy_url) = config.proxy_url.as_ref() {
+        if proxy_url.scheme_str() == Some("socks5") {
+            return build_client_with_socks5_proxy(config);
+        }
+    }
+
+    Client::try_from(config).context("Failed to create default Kubernetes client")
+}
+
+fn build_client_with_socks5_proxy(config: Config) -> Result<Client> {
+    let default_namespace = config.default_namespace.clone();
+    let connector = build_socks5_connector(&config)?;
+    let connector = config
+        .rustls_https_connector_with_connector(connector)
+        .context("Failed to configure TLS connector for SOCKS5 proxy")?;
+    let mut connector = TimeoutConnector::new(connector);
+    connector.set_connect_timeout(config.connect_timeout);
+    connector.set_read_timeout(config.read_timeout);
+    connector.set_write_timeout(config.write_timeout);
+
+    let service = ServiceBuilder::new()
+        .layer(config.base_uri_layer())
+        .option_layer(config.auth_layer()?)
+        .layer(config.extra_headers_layer()?)
+        .map_err(BoxError::from)
+        .service(hyper_util::client::legacy::Client::builder(TokioExecutor::new()).build(connector));
+
+    Ok(Client::new(service, default_namespace))
+}
+
+fn build_socks5_connector(
+    config: &Config,
+) -> Result<SocksV5<HttpConnector>> {
+    let mut connector = HttpConnector::new();
+    connector.enforce_http(false);
+
+    let proxy_url = config
+        .proxy_url
+        .clone()
+        .context("SOCKS5 proxy requested but proxy URL is missing")?;
+
+    let (proxy_url, auth) = strip_proxy_userinfo(&proxy_url)?;
+    let connector = if let Some((user, pass)) = auth {
+        SocksV5::new(proxy_url, connector).with_auth(user, pass)
+    } else {
+        SocksV5::new(proxy_url, connector)
+    };
+
+    Ok(connector)
+}
+
+fn strip_proxy_userinfo(proxy_url: &http::Uri) -> Result<(http::Uri, Option<(String, String)>)> {
+    let Some(authority) = proxy_url.authority() else {
+        return Ok((proxy_url.clone(), None));
+    };
+
+    let authority_str = authority.as_str();
+    let Some((userinfo, host_port)) = authority_str.rsplit_once('@') else {
+        return Ok((proxy_url.clone(), None));
+    };
+
+    let (user, pass) = userinfo.split_once(':').unwrap_or((userinfo, ""));
+    let mut sanitized = format!(
+        "{}://{}",
+        proxy_url.scheme_str().unwrap_or("socks5"),
+        host_port
+    );
+
+    if let Some(path_and_query) = proxy_url.path_and_query() {
+        sanitized.push_str(path_and_query.as_str());
+    }
+
+    let sanitized_proxy_url = sanitized
+        .parse()
+        .context("Failed to parse SOCKS5 proxy URL without userinfo")?;
+
+    Ok((
+        sanitized_proxy_url,
+        Some((percent_decode(user)?, percent_decode(pass)?)),
+    ))
+}
+
+fn percent_decode(value: &str) -> Result<String> {
+    let bytes = value.as_bytes();
+    let mut decoded = String::with_capacity(value.len());
+    let mut index = 0;
+
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            if index + 2 >= bytes.len() {
+                anyhow::bail!("invalid percent-encoding in proxy credentials");
+            }
+
+            let hex = std::str::from_utf8(&bytes[index + 1..index + 3])
+                .context("Invalid UTF-8 in percent-encoded proxy credential")?;
+            let byte = u8::from_str_radix(hex, 16)
+                .with_context(|| format!("Invalid percent-encoding '%{hex}' in proxy credential"))?;
+            decoded.push(byte as char);
+            index += 3;
+        } else {
+            decoded.push(bytes[index] as char);
+            index += 1;
+        }
+    }
+
+    Ok(decoded)
+}
+
+fn connection_error_hint(message: &str) -> Option<&'static str> {
+    let lower = message.to_ascii_lowercase();
+
+    if lower.contains("deadline has elapsed") || lower.contains("timed out") {
+        return Some(
+            "the Kubernetes API connection timed out; verify network/proxy reachability and, if needed, increase --request-timeout",
+        );
+    }
+
+    if lower.contains("socks error") && lower.contains("does not support user/pass authentication")
+    {
+        return Some(
+            "the configured SOCKS5 proxy does not accept username/password authentication; verify the proxy auth method expected by this cluster context",
+        );
+    }
+
+    if lower.contains("socks error") && lower.contains("credentials not accepted") {
+        return Some(
+            "the configured SOCKS5 proxy rejected the supplied credentials; verify the proxy username and password in your kubeconfig",
+        );
+    }
+
+    if lower.contains("socks error") && lower.contains("authentication incorrectly") {
+        return Some(
+            "the SOCKS5 proxy and client disagreed on the negotiated authentication method; verify the proxy configuration for this context",
+        );
+    }
+
+    if lower.contains("socks error") && lower.contains("authentication") {
+        return Some(
+            "the configured SOCKS5 proxy failed during authentication; verify the proxy auth method and credentials for this context",
+        );
+    }
+
+    if lower.contains("socks error") {
+        return Some("the configured SOCKS5 proxy failed the connection; verify proxy settings");
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        apply_request_timeout, connection_error_hint, format_connection_error, percent_decode,
+        strip_proxy_userinfo,
+    };
+    use kube::Config;
+    use std::error::Error;
+    use std::fmt;
+    use std::time::Duration;
+
+    #[derive(Debug)]
+    struct TestError {
+        message: &'static str,
+        source: Option<Box<dyn Error + Send + Sync>>,
+    }
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.message)
+        }
+    }
+
+    impl Error for TestError {
+        fn source(&self) -> Option<&(dyn Error + 'static)> {
+            self.source.as_deref().map(|source| source as _)
+        }
+    }
+
+    #[test]
+    fn test_format_connection_error_preserves_cause() {
+        let message = format_connection_error(&TestError {
+            message: "proxy requires kube/socks5",
+            source: None,
+        });
+        assert_eq!(
+            message,
+            "Failed to connect to Kubernetes cluster.\nCause: proxy requires kube/socks5"
+        );
+    }
+
+    #[test]
+    fn test_format_connection_error_includes_source_chain() {
+        let message = format_connection_error(&TestError {
+            message: "ServiceError: client error (Connect)",
+            source: Some(Box::new(TestError {
+                message: "tcp connect error",
+                source: Some(Box::new(TestError {
+                    message: "Connection refused (os error 111)",
+                    source: None,
+                })),
+            })),
+        });
+
+        assert_eq!(
+            message,
+            "Failed to connect to Kubernetes cluster.\nCause: ServiceError: client error (Connect) -> caused by: tcp connect error -> caused by: Connection refused (os error 111)"
+        );
+    }
+
+    #[test]
+    fn test_format_connection_error_skips_redundant_wrapped_source() {
+        let message = format_connection_error(&TestError {
+            message: "ServiceError: client error (Connect)",
+            source: Some(Box::new(TestError {
+                message: "client error (Connect)",
+                source: Some(Box::new(TestError {
+                    message: "SOCKS error: server does not support user/pass authentication",
+                    source: None,
+                })),
+            })),
+        });
+
+        assert_eq!(
+            message,
+            "Failed to connect to Kubernetes cluster.\nCause: ServiceError: client error (Connect) -> caused by: SOCKS error: server does not support user/pass authentication\nHint: the configured SOCKS5 proxy does not accept username/password authentication; verify the proxy auth method expected by this cluster context"
+        );
+    }
+
+    #[test]
+    fn test_apply_request_timeout_updates_connect_read_and_write() {
+        let mut config = Config::new("https://example.invalid".parse().unwrap());
+        let timeout = Duration::from_secs(90);
+
+        apply_request_timeout(&mut config, timeout);
+
+        assert_eq!(config.connect_timeout, Some(timeout));
+        assert_eq!(config.read_timeout, Some(timeout));
+        assert_eq!(config.write_timeout, Some(timeout));
+    }
+
+    #[test]
+    fn test_connection_error_hint_for_timeout() {
+        let hint = connection_error_hint(
+            "ServiceError: client error (Connect) -> caused by: deadline has elapsed",
+        );
+        assert_eq!(
+            hint,
+            Some(
+                "the Kubernetes API connection timed out; verify network/proxy reachability and, if needed, increase --request-timeout"
+            )
+        );
+    }
+
+    #[test]
+    fn test_connection_error_hint_for_socks_auth() {
+        let hint = connection_error_hint(
+            "ServiceError: client error (Connect) -> caused by: SOCKS error: server does not support user/pass authentication",
+        );
+        assert_eq!(
+            hint,
+            Some(
+                "the configured SOCKS5 proxy does not accept username/password authentication; verify the proxy auth method expected by this cluster context"
+            )
+        );
+    }
+
+    #[test]
+    fn test_connection_error_hint_for_socks_bad_credentials() {
+        let hint = connection_error_hint(
+            "ServiceError: client error (Connect) -> caused by: SOCKS error: credentials not accepted",
+        );
+        assert_eq!(
+            hint,
+            Some(
+                "the configured SOCKS5 proxy rejected the supplied credentials; verify the proxy username and password in your kubeconfig"
+            )
+        );
+    }
+
+    #[test]
+    fn test_connection_error_hint_for_socks_method_mismatch() {
+        let hint = connection_error_hint(
+            "ServiceError: client error (Connect) -> caused by: SOCKS error: server implements authentication incorrectly",
+        );
+        assert_eq!(
+            hint,
+            Some(
+                "the SOCKS5 proxy and client disagreed on the negotiated authentication method; verify the proxy configuration for this context"
+            )
+        );
+    }
+
+    #[test]
+    fn test_strip_proxy_userinfo_extracts_credentials() {
+        let proxy_url: http::Uri = "socks5://user:pass@proxy.example.com:1080/".parse().unwrap();
+
+        let (sanitized, auth) = strip_proxy_userinfo(&proxy_url).unwrap();
+
+        assert_eq!(sanitized.to_string(), "socks5://proxy.example.com:1080/");
+        assert_eq!(auth, Some(("user".into(), "pass".into())));
+    }
+
+    #[test]
+    fn test_strip_proxy_userinfo_decodes_percent_encoding() {
+        let proxy_url: http::Uri =
+            "socks5://foundation-platform:abc%40123@proxy.example.com:1080/".parse().unwrap();
+
+        let (_, auth) = strip_proxy_userinfo(&proxy_url).unwrap();
+
+        assert_eq!(auth, Some(("foundation-platform".into(), "abc@123".into())));
+    }
+
+    #[test]
+    fn test_strip_proxy_userinfo_without_auth_keeps_proxy() {
+        let proxy_url: http::Uri = "socks5://proxy.example.com:1080/".parse().unwrap();
+
+        let (sanitized, auth) = strip_proxy_userinfo(&proxy_url).unwrap();
+
+        assert_eq!(sanitized, proxy_url);
+        assert!(auth.is_none());
+    }
+
+    #[test]
+    fn test_percent_decode_rejects_invalid_encoding() {
+        let err = percent_decode("%zz").unwrap_err().to_string();
+        assert!(err.contains("Invalid percent-encoding"));
+    }
 }
