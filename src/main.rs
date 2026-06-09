@@ -18,7 +18,7 @@ async fn main() -> KimspectResult<()> {
     debug!("Application started with args: {:?}", args);
 
     // Create the client with improved error context
-    let client = K8sClient::new()
+    let client = K8sClient::new(args.request_timeout)
         .await
         .context("Failed to create Kubernetes client")?;
 
