@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Node;
 use k8s_openapi::api::core::v1::Pod;
-use kube::{Api, Client, api::ListParams};
+use kube::{Api, Client, Config, api::ListParams};
 use thiserror::Error;
 use tracing::{debug, error, info, instrument};
 
@@ -66,9 +66,18 @@ impl K8sClient {
         let kubeconfig_path = Self::get_kubeconfig_path()?;
         debug!(path = %kubeconfig_path, "Using kubeconfig path");
 
-        let client = Client::try_default()
+        let mut config = Config::infer()
             .await
-            .context("Failed to create Kubernetes client")?;
+            .context("Failed to infer Kubernetes configuration")?;
+
+        if let Some(host) = config.cluster_url.host() {
+            if should_bypass_proxy(host) && config.proxy_url.is_some() {
+                debug!(host = host, "Bypassing proxy for Kubernetes API server");
+                config.proxy_url = None;
+            }
+        }
+
+        let client = Client::try_from(config).context("Failed to create Kubernetes client")?;
 
         let k8s_client = Self { client };
 
@@ -695,4 +704,22 @@ pub fn process_pod(pod: &Pod) -> Vec<PodImage> {
     }
 
     pod_images
+}
+
+/// Check if a host should bypass the configured HTTP proxy based on the NO_PROXY or no_proxy environment variables.
+fn should_bypass_proxy(host: &str) -> bool {
+    let no_proxy = std::env::var("no_proxy")
+        .or_else(|_| std::env::var("NO_PROXY"))
+        .unwrap_or_default();
+
+    let host = host.to_lowercase();
+    no_proxy.split(',').any(|domain| {
+        let d = domain.trim().to_lowercase();
+        !d.is_empty()
+            && (d == "*"
+                || host == d
+                || (host.ends_with(&d)
+                    && (d.starts_with('.')
+                        || host.as_bytes().get(host.len() - d.len() - 1) == Some(&b'.'))))
+    })
 }
