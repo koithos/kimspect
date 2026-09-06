@@ -1,5 +1,5 @@
 [toolchain]
-channel = "1.96.1"
+channel = "1.98.1"
 components = ["rustfmt", "clippy"]
 targets = ["aarch64-unknown-linux-musl", "x86_64-unknown-linux-musl", "x86_64-apple-darwin"]
 profile = "minimal"
